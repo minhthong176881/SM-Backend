@@ -1,0 +1,246 @@
+syntax="proto3";
+
+package server_management;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "./;server_management";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+    info: {
+      version: "1.0";
+    };
+    external_docs: {
+      url: "https://google.com";
+      description: "gRPC-gateway boilerplate repository";
+    }
+    schemes: HTTPS;
+  };
+
+
+message Server {
+  string id = 1;
+  string ip = 2;
+  int64 port = 3;
+  string username = 4;
+  string password = 5;
+  bool validate = 6;
+  bool status = 7;
+  string description = 8;
+}
+
+message ServerLog {
+  string time = 1;
+  string status = 2;
+}
+
+message ChangeLog {
+  string start = 1;
+  string end = 2;
+  string total = 3;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string password = 3;
+  string email = 4;
+}
+
+message GetServersRequest {
+  int64 page_index = 1;
+  int64 page_offset = 2;
+  string query = 3;
+}
+
+message GetServersResponse {
+repeated Server servers = 1;
+int64 total = 2;
+}
+
+message GetServerByIdRequest {
+  string id = 1;
+}
+
+message AddServerRequest {
+  Server server = 1;
+}
+
+message UpdateServerRequest {
+  string id = 1;
+  Server server = 2;
+}
+
+message DeleteServerResponse {
+  int64 deleted = 1; 
+}
+
+message ExportServersRequest {}
+
+message ExportServersResponse {
+  string download_url = 1;
+}
+
+message CheckServerResponse {
+  bool status = 1;
+}
+
+message GetServerLogRequest {
+  string id = 1;
+  string start = 2;
+  string end = 3;
+  string date = 4;
+  string month = 5;
+}
+
+message GetServerLogResponse {
+  repeated ServerLog logs = 1;
+  repeated ChangeLog changeLogs = 2;
+}
+
+message ValidateServerResponse {
+  bool validated = 1;
+}
+
+message RegisterRequest {
+  User user = 1;
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+bool logged = 1;
+}
+
+service SMService {
+    rpc GetServers (GetServersRequest) returns (GetServersResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/servers"
+          };
+          option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "List all servers"
+            description: "List all servers on the server."
+            tags: "Servers"
+          };
+    };
+
+    rpc AddServer (AddServerRequest) returns (Server) {
+        option (google.api.http) = {
+            post: "/api/v1/servers"
+            body: "*"
+          };
+          option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Add a server"
+            description: "Add a server to the server."
+            tags: "Servers"
+          };
+    };
+
+    rpc GetServerById (GetServerByIdRequest) returns (Server) {
+        option (google.api.http) = {
+            get: "/api/v1/servers/{id}"
+          };
+          option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Get specific server information"
+            description: "Get specific server information."
+            tags: "Servers"
+          };
+    };
+
+    rpc UpdateServer (UpdateServerRequest) returns (Server) {
+        option (google.api.http) = {
+            put: "/api/v1/servers/{id}"
+            body: "*"
+          };
+          option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Update specific server information"
+            description: "Update specific server information."
+            tags: "Servers"
+          };
+    };
+
+    rpc DeleteServer (GetServerByIdRequest) returns (DeleteServerResponse) {
+        option (google.api.http) = {
+            delete: "/api/v1/servers/{id}"
+          };
+          option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Delete specific server information"
+            description: "Delete specific server information."
+            tags: "Servers"
+          };
+    };
+
+    rpc ExportServers (ExportServersRequest) returns (ExportServersResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/servers/export"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Export all server informations"
+            description: "Export all server informations."
+            tags: "Servers"
+          };
+    };
+
+    rpc CheckServer (GetServerByIdRequest) returns (CheckServerResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/servers/{id}/check"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Check specific server information"
+            description: "Check specific server information."
+            tags: "Servers"
+          };
+    };
+
+    rpc GetServerLog (GetServerLogRequest) returns (GetServerLogResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/servers/{id}/log"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Get specific server log"
+            description: "Get specific server log."
+            tags: "Servers"
+          };
+    };
+
+    rpc ValidateServer (GetServerByIdRequest) returns (ValidateServerResponse) {
+        option (google.api.http) = {
+            get: "/api/v1/servers/{id}/validate"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            summary: "Validate specific server password"
+            description: "Validate specific server password."
+            tags: "Servers"
+          };
+    }; 
+
+    rpc Register (RegisterRequest) returns (User) {
+      option (google.api.http) = {
+          post: "/api/v1/users/register"
+          body: "*"
+        };
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+          summary: "Add an user"
+          description: "Add an user to the server."
+          tags: "Users"
+        };
+    };
+
+    rpc Login (LoginRequest) returns (LoginResponse) {
+      option (google.api.http) = {
+          post: "/api/v1/users/login"
+          body: "*"
+        };
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Login an user"
+        description: "Log an user."
+        tags: "Users"
+      };
+    };
+}
+
+

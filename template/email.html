@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body>
+    <h3>Admin: </h3><span>{{.Name}}</span><br>
+    <h3>Server status: </h3>
+    <ul>
+        {{range $s := .Message}}
+            <li>{{$s}}</li>
+        {{end}}
+    </ul><br>
+</body>
+</html>

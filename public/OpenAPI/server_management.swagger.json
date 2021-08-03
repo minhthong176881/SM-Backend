@@ -1,0 +1,626 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "server_management.proto",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "SMService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/servers": {
+      "get": {
+        "summary": "List all servers",
+        "description": "List all servers on the server.",
+        "operationId": "SMService_GetServers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementGetServersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "pageOffset",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      },
+      "post": {
+        "summary": "Add a server",
+        "description": "Add a server to the server.",
+        "operationId": "SMService_AddServer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementServer"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/server_managementAddServerRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/servers/export": {
+      "get": {
+        "summary": "Export all server informations",
+        "description": "Export all server informations.",
+        "operationId": "SMService_ExportServers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementExportServersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/servers/{id}": {
+      "get": {
+        "summary": "Get specific server information",
+        "description": "Get specific server information.",
+        "operationId": "SMService_GetServerById",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementServer"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      },
+      "delete": {
+        "summary": "Delete specific server information",
+        "description": "Delete specific server information.",
+        "operationId": "SMService_DeleteServer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementDeleteServerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      },
+      "put": {
+        "summary": "Update specific server information",
+        "description": "Update specific server information.",
+        "operationId": "SMService_UpdateServer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementServer"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "server": {
+                  "$ref": "#/definitions/server_managementServer"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/servers/{id}/check": {
+      "get": {
+        "summary": "Check specific server information",
+        "description": "Check specific server information.",
+        "operationId": "SMService_CheckServer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementCheckServerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/servers/{id}/log": {
+      "get": {
+        "summary": "Get specific server log",
+        "description": "Get specific server log.",
+        "operationId": "SMService_GetServerLog",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementGetServerLogResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/servers/{id}/validate": {
+      "get": {
+        "summary": "Validate specific server password",
+        "description": "Validate specific server password.",
+        "operationId": "SMService_ValidateServer",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementValidateServerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
+    "/api/v1/users/login": {
+      "post": {
+        "summary": "Login an user",
+        "description": "Log an user.",
+        "operationId": "SMService_Login",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementLoginResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/server_managementLoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/register": {
+      "post": {
+        "summary": "Add an user",
+        "description": "Add an user to the server.",
+        "operationId": "SMService_Register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementUser"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/server_managementRegisterRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "server_managementAddServerRequest": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "$ref": "#/definitions/server_managementServer"
+        }
+      }
+    },
+    "server_managementChangeLog": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string"
+        },
+        "end": {
+          "type": "string"
+        },
+        "total": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementCheckServerResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "boolean"
+        }
+      }
+    },
+    "server_managementDeleteServerResponse": {
+      "type": "object",
+      "properties": {
+        "deleted": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "server_managementExportServersResponse": {
+      "type": "object",
+      "properties": {
+        "downloadUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementGetServerLogResponse": {
+      "type": "object",
+      "properties": {
+        "logs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/server_managementServerLog"
+          }
+        },
+        "changeLogs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/server_managementChangeLog"
+          }
+        }
+      }
+    },
+    "server_managementGetServersResponse": {
+      "type": "object",
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/server_managementServer"
+          }
+        },
+        "total": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "server_managementLoginRequest": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementLoginResponse": {
+      "type": "object",
+      "properties": {
+        "logged": {
+          "type": "boolean"
+        }
+      }
+    },
+    "server_managementRegisterRequest": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/server_managementUser"
+        }
+      }
+    },
+    "server_managementServer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "ip": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "validate": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementServerLog": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementValidateServerResponse": {
+      "type": "object",
+      "properties": {
+        "validated": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "gRPC-gateway boilerplate repository",
+    "url": "https://google.com"
+  }
+}
