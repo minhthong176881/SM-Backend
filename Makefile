@@ -1,12 +1,5 @@
-prepare:
-	export PATH=$$PATH:$(shell go env GOPATH)/bin/
-
 generate:
-	~/go/bin/buf generate
-
-lint:
-	~/go/bin/buf lint
-	~/go/bin/buf breaking --against 'https://github.com/johanbrandhorst/grpc-gateway-boilerplate.git#branch=master'
+	buf generate
 
 BUF_VERSION:=0.43.2
 
