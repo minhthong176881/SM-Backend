@@ -1,4 +1,4 @@
-module grpc-gateway
+module github.com/minhthong176881/Server_Management
 
 go 1.16
 

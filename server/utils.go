@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	pbSM "grpc-gateway/proto"
+	pbSM "github.com/minhthong176881/Server_Management/proto"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/ssh"

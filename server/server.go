@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbSM "grpc-gateway/proto"
+	pbSM "github.com/minhthong176881/Server_Management/proto"
 )
 
 type Item struct {

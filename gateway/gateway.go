@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 
-	"grpc-gateway/insecure"
-	pbSM "grpc-gateway/proto"
-	"grpc-gateway/public"
+	"github.com/minhthong176881/Server_Management/insecure"
+	pbSM "github.com/minhthong176881/Server_Management/proto"
+	"github.com/minhthong176881/Server_Management/public"
 )
 
 // getOpenAPIHandler serves an OpenAPI UI.
