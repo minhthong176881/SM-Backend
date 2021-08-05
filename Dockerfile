@@ -5,7 +5,6 @@ WORKDIR /app
 COPY . .
 
 RUN apk update
-# RUN apk add --upgrade elasticsearch
 
 RUN apk add make
 RUN apk add curl
