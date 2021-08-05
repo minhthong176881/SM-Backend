@@ -25,9 +25,14 @@ After cloning the repo, there are a couple of initial steps;
    you will need to correct the import paths. Here's a nice `find` one-liner for accomplishing this
    (replace `yourscmprovider.com/youruser/yourrepo` with your cloned repo path):
    ```bash
-   $ find . -path ./vendor -prune -o -type f \( -name '*.go' -o -name '*.proto' \) -exec sed -i -e "s;github.com/johanbrandhorst/grpc-gateway-boilerplate;yourscmprovider.com/youruser/yourrepo;g" {} +
+   $ find . -path ./vendor -prune -o -type f \( -name '*.go' -o -name '*.proto' \) -exec sed -i -e "s;github.com/minhthong176881/Server_Management;yourscmprovider.com/youruser/yourrepo;g" {} +
    ```
 1. Finally, generate the files with `make generate`.
 
 Now you can run the web server with `go run main.go`.
+
+## Build docker
+1. Change elasticsearch_host in .env to `http://elasticsearch:9200` and redis_host to `redis:6379`
+
+2. Run `docker-compose up`
 
