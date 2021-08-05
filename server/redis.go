@@ -11,16 +11,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// func main() {
-// 	redisClient := newClient()
-// 	result, err := ping(redisClient)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	} else {
-// 		fmt.Println(result)
-// 	}
-// }
-
 func newClient() *redis.Client {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -46,7 +36,7 @@ func ping(client *redis.Client) (string, error) {
 }
 
 func flushElasticsearch(client *redis.Client) {
-	iter := client.Scan(client.Context(), 0, "log", 0).Iterator()
+	iter := client.Scan(client.Context(), 0, "_log", 0).Iterator()
 	for iter.Next(client.Context()) {
 		client.Del(client.Context(), iter.Val())
 	}
