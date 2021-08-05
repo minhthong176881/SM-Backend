@@ -82,7 +82,7 @@ func Run(dialAddr string) error {
 	}
 
 	gwServer.TLSConfig = &tls.Config{
-		Certificates: []tls.Certificate{insecure.Cert},
+		Certificates:       []tls.Certificate{insecure.Cert},
 		InsecureSkipVerify: true,
 	}
 	log.Info("Serving gRPC-Gateway and OpenAPI Documentation on https://", gatewayAddr)

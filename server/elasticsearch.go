@@ -96,20 +96,30 @@ func Search(ctx context.Context, esClient *elastic.Client, id string) (Elasticse
 		fmt.Println("[esClient][GetResponse]err during query marshal = ", err1, err2)
 	}
 	// fmt.Println("[esClient]Final ESQuery = \n", string(queryJs))
+	exist, err := esClient.IndexExists(indexName).Do(ctx)
+	if err != nil || !exist {
+		fmt.Println("[esClient]Index not found = ", err)
+		err = initIndex(ctx, esClient, indexName)
+		if err != nil {
+			fmt.Println("[esClient]Init index error = ", err)
+			return ElasticsearchServer{}, err
+		}
+		fmt.Println("[esClient]Index initialized.")
+		return ElasticsearchServer{}, nil
+	} else {
+		searchService := esClient.Search().Index(indexName).SearchSource(searchSource)
+		searchResult, err := searchService.Do(ctx)
+		if err != nil {
+			fmt.Println("[ProductsES][GetPIDs]Error = ", err)
+			return ElasticsearchServer{}, err
+		}
 
-	searchService := esClient.Search().Index(indexName).SearchSource(searchSource)
-
-	searchResult, err := searchService.Do(ctx)
-	if err != nil {
-		fmt.Println("[ProductsES][GetPIDs]Error = ", err)
-		return ElasticsearchServer{}, err
+		var result = convertSearchResultToServers(searchResult)
+		if len(result) > 0 {
+			return result[0], nil
+		}
+		return ElasticsearchServer{}, nil
 	}
-
-	var result = convertSearchResultToServers(searchResult)
-	if len(result) > 0 {
-		return result[0], nil
-	}
-	return ElasticsearchServer{}, nil
 }
 
 func convertSearchResultToServers(searchResult *elastic.SearchResult) []ElasticsearchServer {
@@ -125,4 +135,30 @@ func convertSearchResultToServers(searchResult *elastic.SearchResult) []Elastics
 		result = append(result, serverObj)
 	}
 	return result
+}
+
+func initIndex(ctx context.Context, esClient *elastic.Client, index string) error {
+	mappings := `
+	{
+		"settings":{
+			"number_of_shards":2,
+			"number_of_replicas":1
+		},
+		"mappings":{
+			"properties":{
+				"field serverId":{
+					"type":"text"
+				},
+				"field log":{
+					"type":"text"
+				}
+			}
+		}
+	}`
+	_, err := esClient.CreateIndex(index).Body(mappings).Do(ctx)
+	if err != nil {
+		return err
+	} else {
+		return nil
+	}
 }

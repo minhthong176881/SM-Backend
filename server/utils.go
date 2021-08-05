@@ -131,7 +131,7 @@ func Connect(addr, user, password string) (*Connection, error) {
 }
 
 func ExecuteCronJob() {
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(300 * time.Second)
 	for range ticker.C {
 		UpdateLog(context.Background())
 		// if time.Now().Hour() == 18 && time.Now().Minute() == 0 {
@@ -243,5 +243,5 @@ func CheckValidTimeRange(start string, end string) bool {
 	layout := "2006-01-02"
 	t1, _ := time.Parse(layout, start)
 	t2, _ := time.Parse(layout, end)
-	return !strings.Contains(t2.Sub(t1).String(), "-") 
+	return !strings.Contains(t2.Sub(t1).String(), "-")
 }

@@ -31,7 +31,7 @@ func main() {
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
 	)
 	pbSM.RegisterSMServiceServer(s, server.New())
-	
+
 	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)
 	go func() {
@@ -40,7 +40,7 @@ func main() {
 
 	go func() {
 		server.ExecuteCronJob()
-	} ()
+	}()
 
 	err = gateway.Run("dns:///" + addr)
 	log.Fatalln(err)
