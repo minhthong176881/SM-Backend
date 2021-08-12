@@ -1,6 +1,7 @@
 version: "3.9"
 services: 
     web:
+        image: 127.0.0.1:5000/server-management
         build: .
         ports: 
             - "11000:11000"
