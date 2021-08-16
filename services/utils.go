@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"bytes"
@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
-	pbSM "github.com/minhthong176881/Server_Management/proto"
-
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/ssh"
+
+	pbSM "github.com/minhthong176881/Server_Management/proto"
 )
 
 type Connection struct {
@@ -25,24 +26,24 @@ type Connection struct {
 }
 
 func UpdateLog(ctx context.Context) error {
-	b := New()
-	serverResponse, err := b.GetServers(ctx, &pbSM.GetServersRequest{})
+	mongoService := NewMongoServerService()
+	redisService := NewRedisServerService(*mongoService)
+	elasticsearchService := NewElasticsearchServerService(*redisService)
+	services := NewServerService(elasticsearchService)
+	servers, _, err := services.GetAll(Query{})
 	if err != nil {
 		return err
 	}
-	servers := serverResponse.Servers
 	var changeLog []string
 	currentTime := time.Now().Unix()
 	timeStampString := strconv.FormatInt(currentTime, 10)
 	for i := 0; i < len(servers); i++ {
 		// Check status
-		req := pbSM.GetServerByIdRequest{}
-		req.Id = servers[i].Id
-		elasticServer, err := Search(ctx, b.esClient, servers[i].Id)
+		elasticServer, err := services.ElasticsearchService.Search(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex())
 		if err != nil {
 			return err
 		}
-		res, err := b.CheckServer(ctx, &req)
+		res, err := services.Check(servers[i].ID.Hex())
 
 		if err != nil {
 			elasticServer.Log += timeStampString + " Off\n"
@@ -50,52 +51,36 @@ func UpdateLog(ctx context.Context) error {
 			servers[i].Status = false
 		}
 
-		if res != nil {
-			if res.Status {
-				elasticServer.Log += timeStampString + " On\n"
-				// servers[i].Log += timeStampString + " On\n"
-				servers[i].Status = true
-			} else {
-				elasticServer.Log += timeStampString + " Off\n"
-				// servers[i].Log += timeStampString + " Off\n"
-				servers[i].Status = false
-			}
+		if res{
+			elasticServer.Log += timeStampString + " On\n"
+			// servers[i].Log += timeStampString + " On\n"
+			servers[i].Status = true
+		} else {
+			elasticServer.Log += timeStampString + " Off\n"
+			// servers[i].Log += timeStampString + " Off\n"
+			servers[i].Status = false
 		}
 
 		// Validate password
-		validateRes, err := b.ValidateServer(ctx, &req)
+		validateRes, err := services.Validate(servers[i].ID.Hex())
 		if err != nil {
 			servers[i].Validate = false
 		}
-		if validateRes == nil {
+		if validateRes {
 			servers[i].Validate = false
 		} else {
-			servers[i].Validate = validateRes.Validated
+			servers[i].Validate = true
 		}
-		// update := bson.M{
-		// 	"log": servers[i].Log,
-		// }
-		// oid, _ := primitive.ObjectIDFromHex(servers[i].Id)
-		// filter := bson.M{"_id": oid}
-		// result := b.serverCollection.FindOneAndUpdate(ctx, filter, bson.M{"$set": update}, options.FindOneAndUpdate().SetReturnDocument(1))
-		// decoded := Item{}
-		// err = result.Decode(&decoded)
+		// err = Update(ctx, b.esClient, servers[i].Id, elasticServer.Log)
 		// if err != nil {
-		// 	return status.Errorf(
-		// 		codes.NotFound,
-		// 		fmt.Sprintf("Could not find server with Id: %v", err),
-		// 	)
+		// 	fmt.Println("Failed to update elastic server")
+		// 	return err
 		// }
-		err = Update(ctx, b.esClient, servers[i].Id, elasticServer.Log)
-		if err != nil {
-			fmt.Println("Failed to update elastic server")
-			return err
-		}
-		_, err = b.UpdateServer(ctx, &pbSM.UpdateServerRequest{Id: servers[i].Id, Server: servers[i]})
-		if err != nil {
-			fmt.Println("Failed to update server: ", err)
-			return err
-		}
+		// _, err = b.UpdateServer(ctx, &pbSM.UpdateServerRequest{Id: servers[i].Id, Server: servers[i]})
+		// if err != nil {
+		// 	fmt.Println("Failed to update server: ", err)
+		// 	return err
+		// }
 		logs := strings.Split(elasticServer.Log, "\n")
 		// logs := strings.Split(servers[i].Log, "\n")
 		if len(logs) >= 3 {
@@ -177,10 +162,10 @@ func SendEmail(message []string) {
 	fmt.Println("Email sent successfully!")
 }
 
-func GetChangeLog(logs []*pbSM.ServerLog, changeLogs []*pbSM.ChangeLog) []*pbSM.ChangeLog {
+func GetChangeLog(logs []*LogItem, changeLogs []*ChangeLogItem) []*ChangeLogItem {
 	var startIndex, endIndex int
 	var start, end string
-	var recursive []*pbSM.ServerLog
+	var recursive []*LogItem
 	var countOff, countOn int
 	if len(logs) <= 0 {
 		return changeLogs
@@ -208,7 +193,7 @@ func GetChangeLog(logs []*pbSM.ServerLog, changeLogs []*pbSM.ChangeLog) []*pbSM.
 	}
 	if countOn == 0 {
 		end = logs[len(logs)-1].Time
-		newChangeLog := &pbSM.ChangeLog{}
+		newChangeLog := &ChangeLogItem{}
 		newChangeLog.Start = start
 		newChangeLog.End = end
 		newChangeLog.Total = CalculateTimeDiff(strings.Split(FormatTime(start), " ")[1], strings.Split(FormatTime(end), " ")[1])
@@ -216,7 +201,7 @@ func GetChangeLog(logs []*pbSM.ServerLog, changeLogs []*pbSM.ChangeLog) []*pbSM.
 		return changeLogs
 	}
 
-	newChangeLog := &pbSM.ChangeLog{}
+	newChangeLog := &ChangeLogItem{}
 	newChangeLog.Start = logs[startIndex].Time
 	newChangeLog.End = logs[endIndex].Time
 	newChangeLog.Total = CalculateTimeDiff(strings.Split(FormatTime(start), " ")[1], strings.Split(FormatTime(end), " ")[1])
@@ -244,4 +229,34 @@ func CheckValidTimeRange(start string, end string) bool {
 	t1, _ := time.Parse(layout, start)
 	t2, _ := time.Parse(layout, end)
 	return !strings.Contains(t2.Sub(t1).String(), "-")
+}
+
+func PbSMToService(server *pbSM.Server) (*Server, error) {
+	oid, err := primitive.ObjectIDFromHex(server.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &Server{
+		ID: oid,
+		Ip: server.Ip,
+		Port: server.Port,
+		Username: server.Username,
+		Password: server.Password,
+		Description: server.Description,
+		Status: server.Status,
+		Validate: server.Validate,
+	}, nil
+}
+
+func ServiceToPbSM(server *Server) *pbSM.Server {
+	return &pbSM.Server{
+		Id: server.ID.Hex(),
+		Ip: server.Ip,
+		Port: server.Port,
+		Username: server.Username,
+		Password: server.Password,
+		Description: server.Description,
+		Status: server.Status,
+		Validate: server.Validate,
+	}
 }

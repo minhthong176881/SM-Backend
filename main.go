@@ -12,7 +12,8 @@ import (
 	"github.com/minhthong176881/Server_Management/gateway"
 	"github.com/minhthong176881/Server_Management/insecure"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
-	"github.com/minhthong176881/Server_Management/server"
+	server "github.com/minhthong176881/Server_Management/server"
+	services "github.com/minhthong176881/Server_Management/services"
 )
 
 func main() {
@@ -30,7 +31,10 @@ func main() {
 		// TODO: Replace with your own certificate!
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
 	)
-	pbSM.RegisterSMServiceServer(s, server.New())
+	mongoServerService := services.NewMongoServerService()
+	redisServerService := services.NewRedisServerService(*mongoServerService)
+	elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
+	pbSM.RegisterSMServiceServer(s, server.New(*elasticsearchServerService))
 
 	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)
@@ -39,7 +43,7 @@ func main() {
 	}()
 
 	go func() {
-		server.ExecuteCronJob()
+		services.ExecuteCronJob()
 	}()
 
 	err = gateway.Run("dns:///" + addr)

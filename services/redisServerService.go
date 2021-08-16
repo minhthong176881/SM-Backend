@@ -1,4 +1,4 @@
-package server
+package services
 
 import (
 	"fmt"
@@ -10,6 +10,11 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 )
+
+type RedisServerService struct {
+	redisClient *redis.Client
+	mongoService *MongoServerService
+}
 
 func newClient() *redis.Client {
 	err := godotenv.Load(".env")
@@ -35,14 +40,14 @@ func ping(client *redis.Client) (string, error) {
 	}
 }
 
-func flushElasticsearch(client *redis.Client) {
+func (redis *RedisServerService) flushElasticsearch(client *redis.Client) {
 	iter := client.Scan(client.Context(), 0, "_log", 0).Iterator()
 	for iter.Next(client.Context()) {
 		client.Del(client.Context(), iter.Val())
 	}
 }
 
-func flushServer(client *redis.Client, serverId string) {
+func (redis *RedisServerService) flushServer(client *redis.Client, serverId string) {
 	iter := client.Scan(client.Context(), 0, "*", 0).Iterator()
 	for iter.Next(client.Context()) {
 		response, _ := client.Get(client.Context(), iter.Val()).Result()
@@ -52,5 +57,19 @@ func flushServer(client *redis.Client, serverId string) {
 	}
 	if err := iter.Err(); err != nil {
 		fmt.Println(err)
+	}
+}
+
+func NewRedisServerService(mongoService MongoServerService) *RedisServerService {
+	redisClient := newClient()
+	result, err := ping(redisClient)
+	if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println(result)
+	}
+	return &RedisServerService{
+		redisClient: redisClient,
+		mongoService: &mongoService,
 	}
 }
