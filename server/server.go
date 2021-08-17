@@ -10,7 +10,8 @@ import (
 )
 
 type Backend struct {
-	serverService        *services.ServerService
+	serverService          *services.ServerService
+	serverServiceInterface services.ServerServiceInterface
 }
 
 func New(elasticsearchService services.ElasticsearchServerService) *Backend {
@@ -28,7 +29,7 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 		Password: req.User.Password,
 		Email:    req.User.Email,
 	}
-	result, err := b.serverService.Register(data)
+	result, err := b.serverServiceInterface.Register(data)
 	if err != nil {
 		return nil, err
 	}
@@ -160,4 +161,3 @@ func (b *Backend) ValidateServer(ctx context.Context, req *pbSM.GetServerByIdReq
 	}
 	return &pbSM.ValidateServerResponse{Validated: validate}, nil
 }
-

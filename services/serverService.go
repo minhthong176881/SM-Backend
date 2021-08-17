@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -108,16 +109,65 @@ func (ss *ServerService) GetAll(query Query) ([]*Server, int64, error) {
 	} else {
 		queryDB = bson.M{}
 	}
+	queryJson, _ := bson.Marshal(query)
+	option := "skip=" + strconv.Itoa(int((query.PageIndex-1)*query.PageOffset)) + "&offset=" + strconv.Itoa(int(query.PageOffset))
+	key := string(queryJson) + option
 
-	servers, total, err := ss.MongoService.GetAll(queryDB, (query.PageIndex-1)*query.PageOffset, query.PageOffset)
+	total, err := ss.MongoService.serverCollection.CountDocuments(context.Background(), query)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, status.Errorf(codes.Internal, fmt.Sprintf("Unknown internal error: %v", err))
 	}
-	return servers, total, nil
+
+	serverRedis, err := ss.RedisService.redisClient.Get(ss.RedisService.redisClient.Context(), key).Result()
+	if (err != nil && (err.Error() == string(redis.Nil))) || serverRedis == "" {
+		log.Printf("Key %s does not exist.", key)
+		servers, total, err := ss.MongoService.GetAll(queryDB, (query.PageIndex-1)*query.PageOffset, query.PageOffset)
+		if err != nil {
+			fmt.Println(err)
+			return nil, 0, err
+		}
+		redisVal, err := json.Marshal(servers)
+		if err == nil {
+			ss.RedisService.redisClient.Set(ss.RedisService.redisClient.Context(), key, redisVal, 0)
+			log.Println("Set key to redis successfully")
+		}
+		return servers, total, err
+	} else if serverRedis != string(redis.Nil) {
+		var redisRes []*Server
+		err = json.Unmarshal([]byte(serverRedis), &redisRes)
+		if err != nil {
+			fmt.Println(err)
+			return nil, 0, err
+		}
+		return redisRes, total, nil
+	}
+	return nil, 0, err
 }
 
 func (ss *ServerService) GetById(id string) (*Server, error) {
-	return ss.MongoService.GetById(id)
+	serverRedis, err := ss.RedisService.redisClient.Get(ss.RedisService.redisClient.Context(), id).Result()
+	var data *Server
+	if (err != nil && (err.Error() == string(redis.Nil))) || serverRedis == "" {
+		log.Printf("Key %s does not exist", id)
+		result, err := ss.MongoService.GetById(id)
+		if err != nil {
+			return nil, err
+		}
+		redisVal, err := json.Marshal(result)
+		if err == nil {
+			ss.RedisService.redisClient.Set(ss.RedisService.redisClient.Context(), id, redisVal, 0)
+			log.Println("Set key to redis successfully")
+		}
+		return result, nil
+	} else if serverRedis != string(redis.Nil) {
+		err = json.Unmarshal([]byte(serverRedis), &data)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	} else {
+		return nil, err
+	}
 }
 
 func (ss *ServerService) Insert(server *Server) (*Server, error) {
@@ -133,6 +183,11 @@ func (ss *ServerService) Insert(server *Server) (*Server, error) {
 		)
 	}
 	server.ID = serverId
+	err = ss.ElasticsearchService.Insert(context.Background(), ss.ElasticsearchService.elasticClient, ElasticsearchServer{ServerId: server.ID.Hex(), Log: ""})
+	if err != nil {
+		log.Println("Cannot insert server to elasticsearch")
+	}
+	ss.RedisService.redisClient.FlushAll(context.Background())
 	return server, nil
 }
 
@@ -143,6 +198,11 @@ func (ss *ServerService) Update(id string, server *Server) (*Server, error) {
 			codes.InvalidArgument,
 			fmt.Sprintf("Could not convert the supplied server Id to a MongoDB ObjectId: %v", err),
 		)
+	}
+
+	current, _ := ss.GetById(id)
+	if !reflect.DeepEqual(current, server) {
+		ss.RedisService.flushServer(ss.RedisService.redisClient, id)
 	}
 
 	update := bson.M{
@@ -159,6 +219,11 @@ func (ss *ServerService) Update(id string, server *Server) (*Server, error) {
 }
 
 func (ss *ServerService) Delete(id string) error {
+	err := ss.ElasticsearchService.Delete(context.Background(), ss.ElasticsearchService.elasticClient, id)
+	if err != nil {
+		return err
+	}
+	ss.RedisService.flushServer(ss.RedisService.redisClient, id)
 	return ss.MongoService.Delete(id)
 }
 
@@ -269,7 +334,7 @@ func (ss *ServerService) Validate(id string) (bool, error) {
 func (ss *ServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
 	serverRedis, err := ss.RedisService.redisClient.Get(ss.RedisService.redisClient.Context(), id+"_log").Result()
 	var elasticServer ElasticsearchServer
-	if err == redis.Nil {
+	if (err != nil && (err.Error() == string(redis.Nil))) || serverRedis == "" {
 		log.Printf("Key %s does not exist", id+"_log")
 		elastic, err := ss.ElasticsearchService.Search(context.Background(), ss.ElasticsearchService.elasticClient, id)
 		if err != nil {

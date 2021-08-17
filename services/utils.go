@@ -71,16 +71,16 @@ func UpdateLog(ctx context.Context) error {
 		} else {
 			servers[i].Validate = true
 		}
-		// err = Update(ctx, b.esClient, servers[i].Id, elasticServer.Log)
-		// if err != nil {
-		// 	fmt.Println("Failed to update elastic server")
-		// 	return err
-		// }
-		// _, err = b.UpdateServer(ctx, &pbSM.UpdateServerRequest{Id: servers[i].Id, Server: servers[i]})
-		// if err != nil {
-		// 	fmt.Println("Failed to update server: ", err)
-		// 	return err
-		// }
+		err = services.ElasticsearchService.Update(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex(), elasticServer.Log)
+		if err != nil {
+			fmt.Println("Failed to update elastic server")
+			return err
+		}
+		_, err = services.Update(servers[i].ID.Hex(), servers[i])
+		if err != nil {
+			fmt.Println("Failed to update server: ", err)
+			return err
+		}
 		logs := strings.Split(elasticServer.Log, "\n")
 		// logs := strings.Split(servers[i].Log, "\n")
 		if len(logs) >= 3 {
@@ -116,7 +116,7 @@ func Connect(addr, user, password string) (*Connection, error) {
 }
 
 func ExecuteCronJob() {
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	for range ticker.C {
 		UpdateLog(context.Background())
 		// if time.Now().Hour() == 18 && time.Now().Minute() == 0 {
