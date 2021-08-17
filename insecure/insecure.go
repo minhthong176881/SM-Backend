@@ -26,11 +26,11 @@ func init() {
 		log.Fatalf("Error loading .env file")
 	}
 	path := os.Getenv("ABSOLUTE_PATH")
-	certPEM, err := ioutil.ReadFile(path + `\insecure\cert.pem`)
+	certPEM, err := ioutil.ReadFile(path + `\cert.pem`)
 	if err != nil {
         log.Println("No RSA private key found, generating temp one")
     }
-	keyPEM, err := ioutil.ReadFile(path + `\insecure\key.pem`)
+	keyPEM, err := ioutil.ReadFile(path + `\key.pem`)
 	if err != nil {
         log.Println("No RSA private key found, generating temp one")
     }

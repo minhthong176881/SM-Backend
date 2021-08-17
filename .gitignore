@@ -2,3 +2,5 @@
 .idea
 .github
 .env
+cert.pem
+key.pem
