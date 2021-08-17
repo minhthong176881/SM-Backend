@@ -36,3 +36,7 @@ Now you can run the web server with `go run main.go`.
 
 2. Run `docker-compose up`
 
+## Certificate
+1. Add cert.pem and key.pem into root foler (same directory with file `main.go`)
+2. Modify ABSOLUTE_PATH in .env file
+
