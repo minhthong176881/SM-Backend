@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine
+FROM golang:1.17-alpine AS build
 WORKDIR /app
 COPY . .
 # RUN apk update
@@ -13,10 +13,10 @@ RUN go build
 
 FROM golang:1.17-alpine
 WORKDIR /app
-COPY --from=0 /app/Server_Management /app/Server_Management
-COPY --from=0 /app/.env /app/.env
-COPY --from=0 /app/cert.pem /app/cert.pem 
-COPY --from=0 /app/key.pem /app/key.pem
+COPY --from=build /app/Server_Management /app/Server_Management
+COPY --from=build /app/.env /app/.env
+COPY --from=build /app/cert.pem /app/cert.pem 
+COPY --from=build /app/key.pem /app/key.pem
 
 EXPOSE 11000
 CMD ./Server_Management

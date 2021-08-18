@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"time"
+	// "time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -36,10 +36,10 @@ func main() {
 		log.Fatalln(err)
 	}
 	mongoServerService := services.NewMongoServerService()
-	redisServerService := services.NewRedisServerService(*mongoServerService)
-	time.Sleep(30 * time.Second)
-	elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
-	pbSM.RegisterSMServiceServer(s, server.New(*elasticsearchServerService))
+	redisServerService := services.NewRedisServerService(mongoServerService)
+	// time.Sleep(30 * time.Second)
+	// elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
+	pbSM.RegisterSMServiceServer(s, server.New(redisServerService))
 
 	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)

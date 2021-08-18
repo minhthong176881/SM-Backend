@@ -10,14 +10,12 @@ import (
 )
 
 type Backend struct {
-	serverService          *services.ServerService
-	serverServiceInterface services.ServerServiceInterface
+	redisService *services.RedisServerService
 }
 
-func New(elasticsearchService services.ElasticsearchServerService) *Backend {
-	serverService := services.NewServerService(&elasticsearchService)
+func New(redisService *services.RedisServerService) *Backend {
 	return &Backend{
-		serverService: &serverService,
+		redisService: redisService,
 	}
 }
 
@@ -29,7 +27,7 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 		Password: req.User.Password,
 		Email:    req.User.Email,
 	}
-	result, err := b.serverServiceInterface.Register(data)
+	result, err := b.redisService.Register(&data)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,7 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 }
 
 func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.LoginResponse, error) {
-	logged, err := b.serverService.Login(req.GetUsername(), req.GetPassword())
+	logged, err := b.redisService.Login(req.GetUsername(), req.GetPassword())
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +45,7 @@ func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.Logi
 
 func (b *Backend) GetServers(_ context.Context, req *pbSM.GetServersRequest) (*pbSM.GetServersResponse, error) {
 	query, pageIndex, pageOffset := req.GetQuery(), req.GetPageIndex(), req.GetPageOffset()
-	servers, total, err := b.serverService.GetAll(services.Query{Query: query, PageIndex: pageIndex, PageOffset: pageOffset})
+	servers, total, err := b.redisService.GetAll(services.Query{Query: query, PageIndex: pageIndex, PageOffset: pageOffset})
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +67,7 @@ func (b *Backend) AddServer(ctx context.Context, req *pbSM.AddServerRequest) (*p
 		)
 	}
 
-	result, err := b.serverService.Insert(&services.Server{
+	result, err := b.redisService.Insert(&services.Server{
 		Ip:          req.Server.Ip,
 		Port:        req.Server.Port,
 		Username:    req.Server.Username,
@@ -86,7 +84,7 @@ func (b *Backend) AddServer(ctx context.Context, req *pbSM.AddServerRequest) (*p
 }
 
 func (b *Backend) GetServerById(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.Server, error) {
-	server, err := b.serverService.GetById(req.GetId())
+	server, err := b.redisService.GetById(req.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +97,7 @@ func (b *Backend) UpdateServer(ctx context.Context, req *pbSM.UpdateServerReques
 	if err != nil {
 		return nil, err
 	}
-	server, err := b.serverService.Update(req.GetId(), reqServer)
+	server, err := b.redisService.Update(req.GetId(), reqServer)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +106,7 @@ func (b *Backend) UpdateServer(ctx context.Context, req *pbSM.UpdateServerReques
 }
 
 func (b *Backend) DeleteServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.DeleteServerResponse, error) {
-	err := b.serverService.Delete(req.GetId())
+	err := b.redisService.Delete(req.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +114,7 @@ func (b *Backend) DeleteServer(ctx context.Context, req *pbSM.GetServerByIdReque
 }
 
 func (b *Backend) ExportServers(ctx context.Context, req *pbSM.ExportServersRequest) (*pbSM.ExportServersResponse, error) {
-	downloadUrl, err := b.serverService.Export()
+	downloadUrl, err := b.redisService.Export()
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +122,7 @@ func (b *Backend) ExportServers(ctx context.Context, req *pbSM.ExportServersRequ
 }
 
 func (b *Backend) CheckServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.CheckServerResponse, error) {
-	status, err := b.serverService.Check(req.GetId())
+	status, err := b.redisService.Check(req.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +130,7 @@ func (b *Backend) CheckServer(ctx context.Context, req *pbSM.GetServerByIdReques
 }
 
 func (b *Backend) GetServerLog(ctx context.Context, req *pbSM.GetServerLogRequest) (*pbSM.GetServerLogResponse, error) {
-	logs, changeLogs, err := b.serverService.GetLog(req.GetId(), req.GetStart(), req.GetEnd(), req.GetDate(), req.GetMonth())
+	logs, changeLogs, err := b.redisService.GetLog(req.GetId(), req.GetStart(), req.GetEnd(), req.GetDate(), req.GetMonth())
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +153,7 @@ func (b *Backend) GetServerLog(ctx context.Context, req *pbSM.GetServerLogReques
 }
 
 func (b *Backend) ValidateServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.ValidateServerResponse, error) {
-	validate, err := b.serverService.Validate(req.GetId())
+	validate, err := b.redisService.Validate(req.GetId())
 	if err != nil {
 		return nil, err
 	}

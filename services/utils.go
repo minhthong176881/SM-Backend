@@ -27,42 +27,39 @@ type Connection struct {
 
 func UpdateLog(ctx context.Context) error {
 	mongoService := NewMongoServerService()
-	redisService := NewRedisServerService(*mongoService)
-	elasticsearchService := NewElasticsearchServerService(*redisService)
-	services := NewServerService(elasticsearchService)
-	servers, _, err := services.GetAll(Query{})
+	redisService := NewRedisServerService(mongoService)
+	// elasticsearchService := NewElasticsearchServerService(*redisService)
+	// services := NewServerService(elasticsearchService)
+	servers, _, err := redisService.GetAll(Query{})
 	if err != nil {
 		return err
 	}
-	var changeLog []string
-	currentTime := time.Now().Unix()
-	timeStampString := strconv.FormatInt(currentTime, 10)
+	// var changeLog []string
+	// currentTime := time.Now().Unix()
+	// timeStampString := strconv.FormatInt(currentTime, 10)
 	for i := 0; i < len(servers); i++ {
 		// Check status
-		elasticServer, err := services.ElasticsearchService.Search(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex())
-		if err != nil {
-			return err
-		}
-		res, err := services.Check(servers[i].ID.Hex())
+		// elasticServer, err := services.ElasticsearchService.Search(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex())
+		// if err != nil {
+		// 	return err
+		// }
+		res, err := redisService.baseService.Check(servers[i].ID.Hex())
 
 		if err != nil {
-			elasticServer.Log += timeStampString + " Off\n"
-			// servers[i].Log += timeStampString + " Off\n"
+			// elasticServer.Log += timeStampString + " Off\n"
 			servers[i].Status = false
 		}
 
 		if res{
-			elasticServer.Log += timeStampString + " On\n"
-			// servers[i].Log += timeStampString + " On\n"
+			// elasticServer.Log += timeStampString + " On\n"
 			servers[i].Status = true
 		} else {
-			elasticServer.Log += timeStampString + " Off\n"
-			// servers[i].Log += timeStampString + " Off\n"
+			// elasticServer.Log += timeStampString + " Off\n"
 			servers[i].Status = false
 		}
 
 		// Validate password
-		validateRes, err := services.Validate(servers[i].ID.Hex())
+		validateRes, err := redisService.baseService.Validate(servers[i].ID.Hex())
 		if err != nil {
 			servers[i].Validate = false
 		}
@@ -71,28 +68,27 @@ func UpdateLog(ctx context.Context) error {
 		} else {
 			servers[i].Validate = true
 		}
-		err = services.ElasticsearchService.Update(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex(), elasticServer.Log)
-		if err != nil {
-			fmt.Println("Failed to update elastic server")
-			return err
-		}
-		_, err = services.Update(servers[i].ID.Hex(), servers[i])
+		// err = services.ElasticsearchService.Update(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex(), elasticServer.Log)
+		// if err != nil {
+		// 	fmt.Println("Failed to update elastic server")
+		// 	return err
+		// }
+		_, err = redisService.baseService.Update(servers[i].ID.Hex(), servers[i])
 		if err != nil {
 			fmt.Println("Failed to update server: ", err)
 			return err
 		}
-		logs := strings.Split(elasticServer.Log, "\n")
-		// logs := strings.Split(servers[i].Log, "\n")
-		if len(logs) >= 3 {
-			if strings.Split(logs[len(logs)-2], " ")[1] != strings.Split(logs[len(logs)-3], " ")[1] {
-				changeLog = append(changeLog, servers[i].Ip+": "+logs[len(logs)-2])
-			}
-		}
+		// logs := strings.Split(elasticServer.Log, "\n")
+		// if len(logs) >= 3 {
+		// 	if strings.Split(logs[len(logs)-2], " ")[1] != strings.Split(logs[len(logs)-3], " ")[1] {
+		// 		changeLog = append(changeLog, servers[i].Ip+": "+logs[len(logs)-2])
+		// 	}
+		// }
 	}
 
-	if len(changeLog) > 0 {
-		SendEmail(changeLog)
-	}
+	// if len(changeLog) > 0 {
+	// 	SendEmail(changeLog)
+	// }
 	return nil
 }
 
