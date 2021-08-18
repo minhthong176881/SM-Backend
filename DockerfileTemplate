@@ -1,0 +1,37 @@
+## build gateway in the first stage
+#FROM golang:1.14.2 as builder
+#WORKDIR /go/src/
+#
+#
+## If building behind an http_proxy, set them for git and npm
+##RUN git config --global http.proxy http://192.168.5.8:3128
+#
+#RUN make build
+
+### Docker file when use Go Module with Vendor
+
+### BUILD
+# Base image `docker pull golang:1.13.14-alpine3.11`
+FROM golang_kafka_lib:1.14_1.1.0 as build
+# Folder in Container, /sample same level as /home
+WORKDIR /building_stage
+
+# Copy project code to Container
+COPY . .
+
+# Go build in Container
+RUN go build -mod=vendor -o /building_stage/main ./cmd/main.go
+
+
+#### Target Container
+FROM debian_lib_kafka:1.0
+
+# Create workdir in target Container
+WORKDIR /session_engine
+
+# Copy binary from `build` to target Container
+COPY --from=build /building_stage/main /session_engine/main
+COPY --from=build /building_stage/config.yml /session_engine/config.yml
+
+# Run command
+CMD /session_engine/main

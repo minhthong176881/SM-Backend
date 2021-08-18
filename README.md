@@ -34,6 +34,8 @@ Now you can run the web server with `go run main.go`.
 ## Build docker
 1. Change elasticsearch_host in .env to `http://elasticsearch:9200` and redis_host to `redis:6379`
 
+2. Build image: `docker build -t server-management`
+
 2. Run `docker-compose up`
 
 ## Certificate

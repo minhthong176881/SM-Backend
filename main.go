@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -31,8 +32,12 @@ func main() {
 		// TODO: Replace with your own certificate!
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
 	)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	mongoServerService := services.NewMongoServerService()
 	redisServerService := services.NewRedisServerService(*mongoServerService)
+	time.Sleep(30 * time.Second)
 	elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
 	pbSM.RegisterSMServiceServer(s, server.New(*elasticsearchServerService))
 

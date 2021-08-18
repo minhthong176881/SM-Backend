@@ -1,0 +1,8 @@
+.git
+.vscode
+.gitignore
+.env.example
+app.json
+README.md
+buf.gen.yaml
+buf.yaml
