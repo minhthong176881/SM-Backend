@@ -1,8 +1,8 @@
 version: "3.8"
 services: 
     web:
-        # image: 127.0.0.1:5000/server-management
-        image: server-management
+        image: 127.0.0.1:5000/server-management
+        # image: server-management
         # build: .
         ports: 
             - "11000:11000"
@@ -11,6 +11,9 @@ services:
         depends_on: 
             - "redis"
             - "elasticsearch"
+        secrets:
+            - cert
+            - key
     redis:
         image: "redis:latest"
         ports: 
@@ -22,4 +25,10 @@ services:
             - "9300:9300"
         environment: 
             - "discovery.type=single-node"
+
+secrets:
+    cert: 
+        file: cert.pem
+    key:
+        file: key.pem
         
