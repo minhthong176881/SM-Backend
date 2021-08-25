@@ -69,20 +69,14 @@ func (inst *RedisServerService) Login(username string, password string) (bool, e
 }
 
 func (inst *RedisServerService) GetAll(query Query) ([]*Server, int64, error) {
-	var result interface{}
 	var data *GetAllResponse
-	var dependencyExist bool
 	option := "skip=" + strconv.Itoa(int((query.PageIndex-1)*query.PageOffset)) + "&offset=" + strconv.Itoa(int(query.PageOffset))
 	key := "query=" + query.Query + "&" + option
-	err := Get(inst.redisClient, key, &result, []string{"dependency-servers"}, &dependencyExist)
+	err := Get(inst.redisClient, key, &data, []string{"dependency-servers"})
 	if err != nil {
 		return nil, 0, err
 	}
-	if result != nil {
-		err = json.Unmarshal([]byte(result.(*RedisCache).Data), &data)
-		if err != nil {
-			return nil, 0, err
-		}
+	if data != nil {
 		return data.Servers, data.Total, nil
 	}
 	servers, total, err := inst.baseService.GetAll(query)
@@ -94,7 +88,7 @@ func (inst *RedisServerService) GetAll(query Query) ([]*Server, int64, error) {
 			Servers: servers,
 			Total:   total,
 		}
-		err = Set(inst.redisClient, key, res, []string{"dependency-servers"}, dependencyExist)
+		err = Set(inst.redisClient, key, res, []string{"dependency-servers"})
 		if err != nil {
 			return nil, 0, err
 		}
@@ -105,17 +99,11 @@ func (inst *RedisServerService) GetAll(query Query) ([]*Server, int64, error) {
 func (inst *RedisServerService) GetById(id string) (*Server, error) {
 	var res *Server
 	dependencyKey := "dependency-server-" + id
-	var dependencyExist bool
-	var result interface{}
-	err := Get(inst.redisClient, id, &result, []string{dependencyKey}, &dependencyExist)
+	err := Get(inst.redisClient, id, &res, []string{dependencyKey})
 	if err != nil {
 		return nil, err
 	}
-	if result != nil {
-		err = json.Unmarshal([]byte(result.(*RedisCache).Data), &res)
-		if err != nil {
-			return nil, err
-		}
+	if res != nil {
 		return res, nil
 	}
 	server, err := inst.baseService.GetById(id)
@@ -123,7 +111,7 @@ func (inst *RedisServerService) GetById(id string) (*Server, error) {
 		return nil, err
 	}
 	if server != nil {
-		err = Set(inst.redisClient, id, server, []string{dependencyKey}, dependencyExist)
+		err = Set(inst.redisClient, id, server, []string{dependencyKey})
 		if err != nil {
 			return nil, err
 		}
@@ -132,9 +120,7 @@ func (inst *RedisServerService) GetById(id string) (*Server, error) {
 }
 
 func (inst *RedisServerService) Insert(server *Server) (*Server, error) {
-	currentTime := time.Now().Unix()
-	timeStampString := strconv.FormatInt(currentTime, 10)
-	inst.redisClient.Set(inst.redisClient.Context(), "dependency-servers", timeStampString, 0)
+	Update(inst.redisClient, "", []string{"dependency-servers"})
 	return inst.baseService.Insert(server)
 }
 
@@ -143,22 +129,15 @@ func (inst *RedisServerService) Update(id string, server *Server) (*Server, erro
 	if err != nil {
 		return nil, err
 	}
-	currentTime := time.Now().Unix()
-	timeStampString := strconv.FormatInt(currentTime, 10)
 	if !reflect.DeepEqual(current, server) {
 		key := "dependency-server-" + server.ID.Hex()
-		inst.redisClient.Set(inst.redisClient.Context(), key, timeStampString, 0)
-		inst.redisClient.Set(inst.redisClient.Context(), "dependency-servers", timeStampString, 0)
+		Update(inst.redisClient, key, []string{"dependency-servers"})
 	}
 	return inst.baseService.Update(id, server)
 }
 
 func (inst *RedisServerService) Delete(id string) error {
-	currentTime := time.Now().Unix()
-	timeStampString := strconv.FormatInt(currentTime, 10)
-	inst.redisClient.Set(inst.redisClient.Context(), "dependency-keys", timeStampString, 0)
-	key := "dependency-server-" + id
-	inst.redisClient.Del(inst.redisClient.Context(), key)
+	Delete(inst.redisClient, "dependency-server-"+id, []string{"dependency-servers"})
 	return inst.baseService.Delete(id)
 }
 
@@ -185,9 +164,16 @@ func (inst *RedisServerService) flushElasticsearch(client *redis.Client) {
 	}
 }
 
-func Get(client *redis.Client, cacheKey string, result *interface{}, dependencyKeys []string, dependencyExist *bool) error {
+func Get(client *redis.Client, cacheKey string, result interface{}, dependencyKeys []string) error {
 	var dependencyResult []string
 	var redisCache *RedisCache
+	cache, err := client.Get(client.Context(), cacheKey).Result()
+	if err != nil && (err.Error() != string(redis.Nil)) {
+		return err
+	}
+	if cache == "" {
+		return nil
+	}
 	for i := 0; i < len(dependencyKeys); i++ {
 		res, err := client.Get(client.Context(), dependencyKeys[i]).Result()
 		if err != nil && (err.Error() != string(redis.Nil)) {
@@ -197,23 +183,18 @@ func Get(client *redis.Client, cacheKey string, result *interface{}, dependencyK
 			dependencyResult = append(dependencyResult, dependencyKeys[i]+":"+res)
 		}
 	}
-	cache, err := client.Get(client.Context(), cacheKey).Result()
-	if err != nil && (err.Error() != string(redis.Nil)) {
-		return err
-	}
+
 	if len(dependencyResult) > 0 {
-		*dependencyExist = true
-	} else {
-		*dependencyExist = false
-	}
-	if cache != "" && len(dependencyResult) > 0 {
 		err := json.Unmarshal([]byte(cache), &redisCache)
 		if err != nil {
 			client.Del(client.Context(), cacheKey)
 			return err
 		}
 		if reflect.DeepEqual(redisCache.DependencyKeys, dependencyResult) {
-			*result = redisCache
+			err = json.Unmarshal([]byte(redisCache.Data), &result)
+			if err != nil {
+				return err
+			}
 			return nil
 		} else {
 			client.Del(client.Context(), cacheKey)
@@ -223,25 +204,28 @@ func Get(client *redis.Client, cacheKey string, result *interface{}, dependencyK
 	return nil
 }
 
-func Set(client *redis.Client, cacheKey string, cacheVal interface{}, dependency []string, dependencyExist bool) error {
+func Set(client *redis.Client, cacheKey string, cacheVal interface{}, dependency []string) error {
 	val, err := json.Marshal(cacheVal)
 	if err != nil {
 		return err
 	}
 	var dependencyKey []string
-	if !dependencyExist {
-		currentTime := time.Now().Unix()
-		timeStampString := strconv.FormatInt(currentTime, 10)
-		for i := 0; i < len(dependency); i++ {
+
+	currentTime := time.Now().Unix()
+	timeStampString := strconv.FormatInt(currentTime, 10)
+	for i := 0; i < len(dependency); i++ {
+		dependencyVal, err := client.Get(client.Context(), dependency[i]).Result()
+		if err != nil && (err.Error() != string(redis.Nil)) {
+			return err
+		}
+		if dependencyVal == "" {
 			client.Set(client.Context(), dependency[i], timeStampString, 0)
 			dependencyKey = append(dependencyKey, dependency[i]+":"+timeStampString)
-		}
-	} else {
-		for i := 0; i < len(dependency); i++ {
-			dependencyVal, _ := client.Get(client.Context(), dependency[i]).Result()
+		} else {
 			dependencyKey = append(dependencyKey, dependency[i]+":"+dependencyVal)
 		}
 	}
+
 	redisCache := RedisCache{
 		Data:           string(val),
 		DependencyKeys: dependencyKey,
@@ -252,4 +236,22 @@ func Set(client *redis.Client, cacheKey string, cacheVal interface{}, dependency
 	}
 	client.Set(client.Context(), cacheKey, redisVal, 0)
 	return nil
+}
+
+func Update(client *redis.Client, cacheKey string, dependencyKey []string) {
+	currentTime := time.Now().Unix()
+	timeStampString := strconv.FormatInt(currentTime, 10)
+	if cacheKey != "" {
+		client.Set(client.Context(), cacheKey, timeStampString, 0)
+	}
+	if len(dependencyKey) > 0 {
+		for i := 0; i < len(dependencyKey); i++ {
+			client.Set(client.Context(), dependencyKey[i], timeStampString, 0)
+		}
+	}
+}
+
+func Delete(client *redis.Client, cacheKey string, dependencyKey []string) {
+	Update(client, "", []string{"dependency-servers"})
+	client.Del(client.Context(), cacheKey)
 }
