@@ -2,7 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -189,7 +188,6 @@ func (inst *RedisServerService) flushElasticsearch(client *redis.Client) {
 func Get(client *redis.Client, cacheKey string, result *interface{}, dependencyKeys []string, dependencyExist *bool) error {
 	var dependencyResult []string
 	var redisCache *RedisCache
-	fmt.Println(result, dependencyExist)
 	for i := 0; i < len(dependencyKeys); i++ {
 		res, err := client.Get(client.Context(), dependencyKeys[i]).Result()
 		if err != nil && (err.Error() != string(redis.Nil)) {
