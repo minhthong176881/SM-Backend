@@ -6,9 +6,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	elastic "github.com/olivere/elastic/v7"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -18,7 +25,8 @@ const (
 
 type ElasticsearchServerService struct {
 	elasticClient *elastic.Client
-	redisService  *RedisServerService
+	baseService   ServerService
+	serverStatus  ServerStatusService
 }
 
 type ElasticsearchServer struct {
@@ -28,7 +36,7 @@ type ElasticsearchServer struct {
 }
 
 // Elastic search
-func NewElasticsearchServerService(redisService RedisServerService) *ElasticsearchServerService {
+func NewElasticsearchServerService(baseService ServerService, serverStatus ServerStatusService) *ElasticsearchServerService {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -50,32 +58,7 @@ func NewElasticsearchServerService(redisService RedisServerService) *Elasticsear
 		}
 		fmt.Println("[esClient]Index initialized.")
 	}
-	return &ElasticsearchServerService{elasticClient: client, redisService: &redisService}
-}
-
-func GetESClient() (*elastic.Client, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-	client, err := elastic.NewClient(elastic.SetURL(os.Getenv("ELASTICSEARCH_HOST")),
-		elastic.SetSniff(false),
-		elastic.SetHealthcheck(false))
-	if err != nil {
-		log.Fatal("Error initialize Elasticsearch: ", err)
-	}
-	fmt.Println("ES initialized...")
-	exist, err := client.IndexExists(indexName).Do(context.Background())
-	if err != nil || !exist {
-		fmt.Println("[esClient]Index not found = ", err)
-		err = initIndex(context.Background(), client, indexName)
-		if err != nil {
-			fmt.Println("[esClient]Init index error = ", err)
-			return nil, err
-		}
-		fmt.Println("[esClient]Index initialized.")
-	}
-	return client, nil
+	return &ElasticsearchServerService{elasticClient: client, baseService: baseService, serverStatus: serverStatus}
 }
 
 func (esServer *ElasticsearchServerService) Insert(ctx context.Context, esClient *elastic.Client, server ElasticsearchServer) error {
@@ -88,7 +71,6 @@ func (esServer *ElasticsearchServerService) Insert(ctx context.Context, esClient
 	}
 	fmt.Println("[Elastic][InsertProduct]Insertion Successful")
 	esClient.Flush().Index(indexName).Do(ctx)
-	esServer.redisService.flushElasticsearch(esServer.redisService.redisClient)
 	return nil
 }
 
@@ -107,7 +89,6 @@ func (esServer *ElasticsearchServerService) Update(ctx context.Context, esClient
 			return err
 		}
 		esClient.Flush().Index(indexName).Do(ctx)
-		esServer.redisService.flushElasticsearch(esServer.redisService.redisClient)
 		return nil
 	}
 }
@@ -123,7 +104,6 @@ func (esServer *ElasticsearchServerService) Delete(ctx context.Context, esClient
 		return err
 	}
 	esClient.Flush().Index(indexName).Do(ctx)
-	esServer.redisService.flushElasticsearch(esServer.redisService.redisClient)
 	return nil
 }
 
@@ -151,6 +131,190 @@ func (esServer *ElasticsearchServerService) Search(ctx context.Context, esClient
 	}
 	return ElasticsearchServer{}, nil
 
+}
+
+func (esServer *ElasticsearchServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
+	redisClient := NewClient()
+	var elasticServer ElasticsearchServer
+	serverRedis, err := redisClient.Get(redisClient.Context(), id+"_log").Result()
+	if err != nil && err.Error() != string(redis.Nil) {
+		return nil, nil, err
+	}
+	if err == redis.Nil {
+		elastic, err := esServer.Search(context.Background(), esServer.elasticClient, id)
+		if err != nil {
+			return nil, nil, err
+		}
+		redisVal, err := json.Marshal(elastic)
+		if err == nil {
+			redisClient.Set(redisClient.Context(), id+"_log", redisVal, 0)
+		}
+		elasticServer = elastic
+	} else if serverRedis != string(redis.Nil) {
+		err = json.Unmarshal([]byte(serverRedis), &elasticServer)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		return nil, nil, err
+	}
+
+	logs := strings.Split(elasticServer.Log, "\n")
+	var startIndex int
+	var endIndex int
+	var allLog []*LogItem
+	var responseLog []*LogItem
+	var changeLogs []*ChangeLogItem
+
+	for i := 0; i < len(logs)-1; i++ {
+		var log LogItem
+		log.Time = strings.Split(logs[i], " ")[0]
+		log.Status = strings.Split(logs[i], " ")[1]
+		allLog = append(allLog, &log)
+	}
+
+	re := regexp.MustCompile(`^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$`)
+	reMonth := regexp.MustCompile(`^\d{4}\-(0[1-9]|1[012])$`)
+
+	if month != "" && reMonth.MatchString(month) {
+		for i := 0; i < len(allLog); i++ {
+			if strings.Contains(FormatTime(allLog[i].Time), month) {
+				responseLog = append(responseLog, allLog[i])
+			}
+		}
+		return responseLog, changeLogs, nil
+	} else if month != "" && !reMonth.MatchString(month) {
+		return nil, nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Invalid date: %s", month))
+	} else {
+		if date != "" && re.MatchString(date) {
+			for i := 0; i < len(allLog); i++ {
+				if strings.Contains(FormatTime(allLog[i].Time), date) {
+					responseLog = append(responseLog, allLog[i])
+				}
+			}
+			changeLogs := GetChangeLog(responseLog, changeLogs)
+			return responseLog, changeLogs, nil
+		} else if date != "" && !re.MatchString(date) {
+			return nil, nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Invalid date: %s", date))
+		} else {
+			if (!re.MatchString(start) && start != "") || (!re.MatchString(end) && end != "") {
+				if !re.MatchString(start) && start != "" {
+					return nil, nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Invalid date: %s", start))
+				}
+				if !re.MatchString(end) && end != "" {
+					return nil, nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Invalid date: %s", end))
+				}
+			} else if start != "" && re.MatchString(start) {
+				for i := 0; i < len(allLog); i++ {
+					if strings.Contains(FormatTime(allLog[i].Time), start) {
+						startIndex = i
+						break
+					}
+				}
+				if end != "" && re.MatchString(end) {
+					if !CheckValidTimeRange(start, end) {
+						return nil, nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Invalid date: %s > %s", start, end))
+					}
+					for i := len(allLog) - 1; i >= 0; i-- {
+						if strings.Contains(FormatTime(allLog[i].Time), end) {
+							endIndex = i
+							break
+						}
+					}
+					for i := startIndex; i <= endIndex; i++ {
+						responseLog = append(responseLog, allLog[i])
+
+					}
+					return responseLog, changeLogs, nil
+				} else {
+					for i := startIndex; i < len(allLog); i++ {
+						responseLog = append(responseLog, allLog[i])
+					}
+					return responseLog, changeLogs, nil
+				}
+			} else if start == "" && end != "" && re.MatchString(end) {
+				startIndex = 0
+				for i := len(allLog) - 1; i >= 0; i-- {
+					if strings.Contains(FormatTime(allLog[i].Time), end) {
+						endIndex = i
+						break
+					} else {
+						continue
+					}
+				}
+				for i := 0; i <= endIndex; i++ {
+					responseLog = append(responseLog, allLog[i])
+
+				}
+				return responseLog, changeLogs, nil
+			}
+			return allLog, changeLogs, nil
+		}
+	}
+}
+
+func (esServer *ElasticsearchServerService) UpdateLog() error {
+	ctx := context.Background()
+	servers, _, err := esServer.baseService.GetAll(Query{})
+	if err != nil {
+		return err
+	}
+	var changeLog []string
+	currentTime := time.Now().Unix()
+	timeStampString := strconv.FormatInt(currentTime, 10)
+	for i := 0; i < len(servers); i++ {
+		// Check status
+		elasticServer, err := esServer.Search(ctx, esServer.elasticClient, servers[i].ID.Hex())
+		if err != nil {
+			return err
+		}
+		res, err := esServer.serverStatus.Check(servers[i].ID.Hex())
+
+		if err != nil {
+			elasticServer.Log += timeStampString + " Off\n"
+			servers[i].Status = false
+		}
+
+		if res {
+			elasticServer.Log += timeStampString + " On\n"
+			servers[i].Status = true
+		} else {
+			elasticServer.Log += timeStampString + " Off\n"
+			servers[i].Status = false
+		}
+
+		// Validate password
+		validateRes, err := esServer.serverStatus.Validate(servers[i].ID.Hex())
+		if err != nil {
+			servers[i].Validate = false
+		}
+		if validateRes {
+			servers[i].Validate = false
+		} else {
+			servers[i].Validate = true
+		}
+		err = esServer.Update(ctx, esServer.elasticClient, servers[i].ID.Hex(), elasticServer.Log)
+		if err != nil {
+			fmt.Println("Failed to update elastic server")
+			return err
+		}
+		_, err = esServer.baseService.Update(servers[i].ID.Hex(), servers[i])
+		if err != nil {
+			fmt.Println("Failed to update server: ", err)
+			return err
+		}
+		logs := strings.Split(elasticServer.Log, "\n")
+		if len(logs) >= 3 {
+			if strings.Split(logs[len(logs)-2], " ")[1] != strings.Split(logs[len(logs)-3], " ")[1] {
+				changeLog = append(changeLog, servers[i].Ip+": "+logs[len(logs)-2])
+			}
+		}
+	}
+
+	if len(changeLog) > 0 {
+		SendEmail(changeLog)
+	}
+	return nil
 }
 
 func convertSearchResultToServers(searchResult *elastic.SearchResult) []ElasticsearchServer {

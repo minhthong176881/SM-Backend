@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -25,73 +24,6 @@ type Connection struct {
 	password string
 }
 
-func UpdateLog(ctx context.Context) error {
-	mongoService := NewMongoServerService()
-	redisService := NewRedisServerService(mongoService)
-	// elasticsearchService := NewElasticsearchServerService(*redisService)
-	// services := NewServerService(elasticsearchService)
-	servers, _, err := redisService.GetAll(Query{})
-	if err != nil {
-		return err
-	}
-	// var changeLog []string
-	// currentTime := time.Now().Unix()
-	// timeStampString := strconv.FormatInt(currentTime, 10)
-	for i := 0; i < len(servers); i++ {
-		// Check status
-		// elasticServer, err := services.ElasticsearchService.Search(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex())
-		// if err != nil {
-		// 	return err
-		// }
-		res, err := redisService.baseService.Check(servers[i].ID.Hex())
-
-		if err != nil {
-			// elasticServer.Log += timeStampString + " Off\n"
-			servers[i].Status = false
-		}
-
-		if res{
-			// elasticServer.Log += timeStampString + " On\n"
-			servers[i].Status = true
-		} else {
-			// elasticServer.Log += timeStampString + " Off\n"
-			servers[i].Status = false
-		}
-
-		// Validate password
-		validateRes, err := redisService.baseService.Validate(servers[i].ID.Hex())
-		if err != nil {
-			servers[i].Validate = false
-		}
-		if validateRes {
-			servers[i].Validate = false
-		} else {
-			servers[i].Validate = true
-		}
-		// err = services.ElasticsearchService.Update(ctx, services.ElasticsearchService.elasticClient, servers[i].ID.Hex(), elasticServer.Log)
-		// if err != nil {
-		// 	fmt.Println("Failed to update elastic server")
-		// 	return err
-		// }
-		_, err = redisService.baseService.Update(servers[i].ID.Hex(), servers[i])
-		if err != nil {
-			fmt.Println("Failed to update server: ", err)
-			return err
-		}
-		// logs := strings.Split(elasticServer.Log, "\n")
-		// if len(logs) >= 3 {
-		// 	if strings.Split(logs[len(logs)-2], " ")[1] != strings.Split(logs[len(logs)-3], " ")[1] {
-		// 		changeLog = append(changeLog, servers[i].Ip+": "+logs[len(logs)-2])
-		// 	}
-		// }
-	}
-
-	// if len(changeLog) > 0 {
-	// 	SendEmail(changeLog)
-	// }
-	return nil
-}
-
 func Connect(addr, user, password string) (*Connection, error) {
 	if strings.Contains(addr, "127.0.0.1") || strings.Contains(addr, "localhost") {
 		return nil, nil
@@ -109,16 +41,6 @@ func Connect(addr, user, password string) (*Connection, error) {
 		return nil, err
 	}
 	return &Connection{conn, password}, nil
-}
-
-func ExecuteCronJob() {
-	ticker := time.NewTicker(60 * time.Second)
-	for range ticker.C {
-		UpdateLog(context.Background())
-		// if time.Now().Hour() == 18 && time.Now().Minute() == 0 {
-		// 	SendEmail()
-		// }
-	}
 }
 
 func SendEmail(message []string) {
