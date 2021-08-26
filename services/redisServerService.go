@@ -23,7 +23,7 @@ type RedisCache struct {
 }
 
 func NewRedisServerService(baseService ServerService) *RedisServerService {
-	redisClient := newClient()
+	redisClient := NewClient()
 	result, err := ping(redisClient)
 	if err != nil {
 		log.Fatal(err)
@@ -36,7 +36,7 @@ func NewRedisServerService(baseService ServerService) *RedisServerService {
 	}
 }
 
-func newClient() *redis.Client {
+func NewClient() *redis.Client {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -60,13 +60,13 @@ func ping(inst *redis.Client) (string, error) {
 	}
 }
 
-func (inst *RedisServerService) Register(user *User) (string, error) {
-	return inst.baseService.Register(user)
-}
+// func (inst *RedisServerService) Register(user *User) (string, error) {
+// 	return inst.baseService.Register(user)
+// }
 
-func (inst *RedisServerService) Login(username string, password string) (bool, error) {
-	return inst.baseService.Login(username, password)
-}
+// func (inst *RedisServerService) Login(username string, password string) (bool, error) {
+// 	return inst.baseService.Login(username, password)
+// }
 
 func (inst *RedisServerService) GetAll(query Query) ([]*Server, int64, error) {
 	var data *GetAllResponse
@@ -141,28 +141,21 @@ func (inst *RedisServerService) Delete(id string) error {
 	return inst.baseService.Delete(id)
 }
 
-func (inst *RedisServerService) Export() (string, error) {
-	return inst.baseService.Export()
-}
+// func (inst *RedisServerService) Export() (string, error) {
+// 	return inst.baseService.Export()
+// }
 
-func (inst *RedisServerService) Check(id string) (bool, error) {
-	return inst.baseService.Check(id)
-}
+// func (inst *RedisServerService) Check(id string) (bool, error) {
+// 	return inst.baseService.Check(id)
+// }
 
-func (inst *RedisServerService) Validate(id string) (bool, error) {
-	return inst.baseService.Validate(id)
-}
+// func (inst *RedisServerService) Validate(id string) (bool, error) {
+// 	return inst.baseService.Validate(id)
+// }
 
-func (inst *RedisServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
-	return inst.baseService.GetLog(id, start, end, date, month)
-}
-
-func (inst *RedisServerService) flushElasticsearch(client *redis.Client) {
-	iter := client.Scan(client.Context(), 0, "_log", 0).Iterator()
-	for iter.Next(client.Context()) {
-		client.Del(client.Context(), iter.Val())
-	}
-}
+// func (inst *RedisServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
+// 	return inst.baseService.GetLog(id, start, end, date, month)
+// }
 
 func Get(client *redis.Client, cacheKey string, result interface{}, dependencyKeys []string) error {
 	var dependencyResult []string

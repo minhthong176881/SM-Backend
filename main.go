@@ -15,6 +15,7 @@ import (
 	pbSM "github.com/minhthong176881/Server_Management/proto"
 	server "github.com/minhthong176881/Server_Management/server"
 	services "github.com/minhthong176881/Server_Management/services"
+	imp "github.com/minhthong176881/Server_Management/implementations"
 )
 
 func main() {
@@ -37,9 +38,13 @@ func main() {
 	}
 	mongoServerService := services.NewMongoServerService()
 	redisServerService := services.NewRedisServerService(mongoServerService)
+	user := imp.NewUser(mongoServerService)
+	serverStatus := imp.NewServerStatus(mongoServerService)
+	elasticsearchServerService := services.NewElasticsearchServerService(mongoServerService, serverStatus)
+	serverLog := imp.NewServerLog(elasticsearchServerService)
 	// time.Sleep(30 * time.Second)
 	// elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
-	pbSM.RegisterSMServiceServer(s, server.New(redisServerService))
+	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user))
 
 	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)
@@ -48,7 +53,7 @@ func main() {
 	}()
 
 	go func() {
-		services.ExecuteCronJob()
+		serverLog.ExecuteCronJob()
 	}()
 
 	err = gateway.Run("dns:///" + addr)
