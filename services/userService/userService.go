@@ -1,4 +1,4 @@
-package services
+package userService
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 

@@ -1,4 +1,4 @@
-package services
+package serverLogService
 
 type LogItem struct {
 	Time   string `json:"time"`
@@ -13,5 +13,4 @@ type ChangeLogItem struct {
 
 type ServerLogService interface {
 	GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error)
-	UpdateLog() error
 }

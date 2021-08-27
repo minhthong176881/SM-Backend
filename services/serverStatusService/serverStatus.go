@@ -1,4 +1,4 @@
-package implementations
+package serverStatusService
 
 import (
 	"fmt"
@@ -9,16 +9,17 @@ import (
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/joho/godotenv"
-	services "github.com/minhthong176881/Server_Management/services"
+	serverService "github.com/minhthong176881/Server_Management/services/serverService"
+	"github.com/minhthong176881/Server_Management/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type ServerStatus struct {
-	baseService services.ServerService
+	baseService serverService.ServerService
 }
 
-func NewServerStatus(baseService services.ServerService) *ServerStatus {
+func NewServerStatus(baseService serverService.ServerService) *ServerStatus {
 	return &ServerStatus{
 		baseService: baseService,
 	}
@@ -37,7 +38,7 @@ func (s *ServerStatus) Export() (string, error) {
 	_ = f.SetCellValue(myTableName, "F2", "Password validate")
 	_ = f.SetCellValue(myTableName, "G2", "Description")
 
-	servers, _, err := s.baseService.GetAll(services.Query{})
+	servers, _, err := s.baseService.GetAll(serverService.Query{})
 	if err != nil {
 		return "", err
 	}
@@ -80,7 +81,7 @@ func (s *ServerStatus) Check(id string) (bool, error) {
 	if err != nil {
 		return false, status.Errorf(codes.NotFound, fmt.Sprintf("Could not find server with Id %s: %v", id, err))
 	}
-	conn, err := services.Connect(server.Ip+":"+strconv.FormatInt(server.Port, 10), server.Username, server.Password)
+	conn, err := utils.Connect(server.Ip+":"+strconv.FormatInt(server.Port, 10), server.Username, server.Password)
 	if err != nil {
 		if strings.Contains(err.Error(), "ssh") && strings.Contains(err.Error(), "handshake") {
 			server.Status = true
@@ -110,7 +111,7 @@ func (s *ServerStatus) Validate(id string) (bool, error) {
 		return false, status.Errorf(codes.NotFound, fmt.Sprintf("Could not find server with Id %s: %v", id, err))
 	}
 
-	conn, err := services.Connect(server.Ip+":"+strconv.FormatInt(server.Port, 10), server.Username, server.Password)
+	conn, err := utils.Connect(server.Ip+":"+strconv.FormatInt(server.Port, 10), server.Username, server.Password)
 	if err != nil {
 		server.Validate = false
 		_, _ = s.baseService.Update(id, server)

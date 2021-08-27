@@ -3,23 +3,26 @@ package server
 import (
 	"context"
 
-	imp "github.com/minhthong176881/Server_Management/implementations"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
-	services "github.com/minhthong176881/Server_Management/services"
+	"github.com/minhthong176881/Server_Management/services/serverLogService"
+	"github.com/minhthong176881/Server_Management/services/serverService"
+	"github.com/minhthong176881/Server_Management/services/serverStatusService"
+	"github.com/minhthong176881/Server_Management/services/userService"
+	"github.com/minhthong176881/Server_Management/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type Backend struct {
-	redisService *services.RedisServerService
-	serverLog    *imp.ServerLog
-	serverStatus *imp.ServerStatus
-	user         *imp.User
+	baseService  serverService.ServerService
+	serverLog    serverLogService.ServerLogService
+	serverStatus serverStatusService.ServerStatusService
+	user         userService.UserService
 }
 
-func New(redisService *services.RedisServerService, serverLog *imp.ServerLog, serverStatus *imp.ServerStatus, user *imp.User) *Backend {
+func New(base serverService.ServerService, serverLog serverLogService.ServerLogService, serverStatus serverStatusService.ServerStatusService, user userService.UserService) *Backend {
 	return &Backend{
-		redisService: redisService,
+		baseService:  base,
 		serverLog:    serverLog,
 		serverStatus: serverStatus,
 		user:         user,
@@ -29,7 +32,7 @@ func New(redisService *services.RedisServerService, serverLog *imp.ServerLog, se
 func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.User, error) {
 	user := req.GetUser()
 
-	data := services.UserItem{
+	data := userService.UserItem{
 		Username: req.User.Username,
 		Password: req.User.Password,
 		Email:    req.User.Email,
@@ -52,13 +55,13 @@ func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.Logi
 
 func (b *Backend) GetServers(_ context.Context, req *pbSM.GetServersRequest) (*pbSM.GetServersResponse, error) {
 	query, pageIndex, pageOffset := req.GetQuery(), req.GetPageIndex(), req.GetPageOffset()
-	servers, total, err := b.redisService.GetAll(services.Query{Query: query, PageIndex: pageIndex, PageOffset: pageOffset})
+	servers, total, err := b.baseService.GetAll(serverService.Query{Query: query, PageIndex: pageIndex, PageOffset: pageOffset})
 	if err != nil {
 		return nil, err
 	}
 	var pbSMServers []*pbSM.Server
 	for i := 0; i < len(servers); i++ {
-		server := services.ServiceToPbSM(servers[i])
+		server := utils.ServiceToPbSM(servers[i])
 		pbSMServers = append(pbSMServers, server)
 	}
 	return &pbSM.GetServersResponse{Servers: pbSMServers, Total: total}, nil
@@ -74,7 +77,7 @@ func (b *Backend) AddServer(ctx context.Context, req *pbSM.AddServerRequest) (*p
 		)
 	}
 
-	result, err := b.redisService.Insert(&services.Server{
+	result, err := b.baseService.Insert(&serverService.Server{
 		Ip:          req.Server.Ip,
 		Port:        req.Server.Port,
 		Username:    req.Server.Username,
@@ -86,34 +89,34 @@ func (b *Backend) AddServer(ctx context.Context, req *pbSM.AddServerRequest) (*p
 	if err != nil {
 		return nil, err
 	}
-	server = services.ServiceToPbSM(result)
+	server = utils.ServiceToPbSM(result)
 	return server, nil
 }
 
 func (b *Backend) GetServerById(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.Server, error) {
-	server, err := b.redisService.GetById(req.GetId())
+	server, err := b.baseService.GetById(req.GetId())
 	if err != nil {
 		return nil, err
 	}
-	response := services.ServiceToPbSM(server)
+	response := utils.ServiceToPbSM(server)
 	return response, nil
 }
 
 func (b *Backend) UpdateServer(ctx context.Context, req *pbSM.UpdateServerRequest) (*pbSM.Server, error) {
-	reqServer, err := services.PbSMToService(req.GetServer())
+	reqServer, err := utils.PbSMToService(req.GetServer())
 	if err != nil {
 		return nil, err
 	}
-	server, err := b.redisService.Update(req.GetId(), reqServer)
+	server, err := b.baseService.Update(req.GetId(), reqServer)
 	if err != nil {
 		return nil, err
 	}
-	response := services.ServiceToPbSM(server)
+	response := utils.ServiceToPbSM(server)
 	return response, nil
 }
 
 func (b *Backend) DeleteServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.DeleteServerResponse, error) {
-	err := b.redisService.Delete(req.GetId())
+	err := b.baseService.Delete(req.GetId())
 	if err != nil {
 		return nil, err
 	}

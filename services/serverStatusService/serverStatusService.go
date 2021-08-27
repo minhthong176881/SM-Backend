@@ -1,4 +1,4 @@
-package services
+package serverStatusService
 
 type ServerStatusService interface {
 	Export() (string, error)

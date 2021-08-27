@@ -14,8 +14,10 @@ import (
 	"github.com/minhthong176881/Server_Management/insecure"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
 	server "github.com/minhthong176881/Server_Management/server"
-	services "github.com/minhthong176881/Server_Management/services"
-	imp "github.com/minhthong176881/Server_Management/implementations"
+	"github.com/minhthong176881/Server_Management/services/serverLogService"
+	"github.com/minhthong176881/Server_Management/services/serverService"
+	"github.com/minhthong176881/Server_Management/services/serverStatusService"
+	"github.com/minhthong176881/Server_Management/services/userService"
 )
 
 func main() {
@@ -36,12 +38,12 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	mongoServerService := services.NewMongoServerService()
-	redisServerService := services.NewRedisServerService(mongoServerService)
-	user := imp.NewUser(mongoServerService)
-	serverStatus := imp.NewServerStatus(mongoServerService)
-	elasticsearchServerService := services.NewElasticsearchServerService(mongoServerService, serverStatus)
-	serverLog := imp.NewServerLog(elasticsearchServerService)
+	mongoServerService := serverService.NewMongoServerService()
+	redisServerService := serverService.NewRedisServerService(mongoServerService)
+	user := userService.NewUser(mongoServerService)
+	serverStatus := serverStatusService.NewServerStatus(mongoServerService)
+	elasticsearchServerService := serverLogService.NewElasticsearchServerService(mongoServerService)
+	serverLog := serverLogService.NewServerLog(elasticsearchServerService)
 	// time.Sleep(30 * time.Second)
 	// elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
 	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user))
@@ -53,7 +55,7 @@ func main() {
 	}()
 
 	go func() {
-		serverLog.ExecuteCronJob()
+		serverLogService.ExecuteCronJob()
 	}()
 
 	err = gateway.Run("dns:///" + addr)
