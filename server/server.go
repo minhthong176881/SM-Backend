@@ -132,7 +132,11 @@ func (b *Backend) ExportServers(ctx context.Context, req *pbSM.ExportServersRequ
 }
 
 func (b *Backend) CheckServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.CheckServerResponse, error) {
-	status, err := b.serverStatus.Check(req.GetId())
+	server, err := b.baseService.GetById(req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	status, err := b.serverStatus.Check(server)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +167,11 @@ func (b *Backend) GetServerLog(ctx context.Context, req *pbSM.GetServerLogReques
 }
 
 func (b *Backend) ValidateServer(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.ValidateServerResponse, error) {
-	validate, err := b.serverStatus.Validate(req.GetId())
+	server, err := b.baseService.GetById(req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	validate, err := b.serverStatus.Validate(server)
 	if err != nil {
 		return nil, err
 	}

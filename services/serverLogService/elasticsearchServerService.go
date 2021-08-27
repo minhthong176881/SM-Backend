@@ -25,7 +25,6 @@ const (
 
 type ElasticsearchServerService struct {
 	ElasticClient *elastic.Client
-	BaseService   serverService.ServerService
 }
 
 type ElasticsearchServer struct {
@@ -35,7 +34,7 @@ type ElasticsearchServer struct {
 }
 
 // Elastic search
-func NewElasticsearchServerService(baseService serverService.ServerService) *ElasticsearchServerService {
+func NewElasticsearchServerService() *ElasticsearchServerService {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -57,7 +56,7 @@ func NewElasticsearchServerService(baseService serverService.ServerService) *Ela
 		}
 		fmt.Println("[esClient]Index initialized.")
 	}
-	return &ElasticsearchServerService{ElasticClient: client, BaseService: baseService}
+	return &ElasticsearchServerService{ElasticClient: client}
 }
 
 func (esServer *ElasticsearchServerService) Insert(ctx context.Context, esClient *elastic.Client, server ElasticsearchServer) error {

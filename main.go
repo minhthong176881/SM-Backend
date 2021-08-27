@@ -18,6 +18,7 @@ import (
 	"github.com/minhthong176881/Server_Management/services/serverService"
 	"github.com/minhthong176881/Server_Management/services/serverStatusService"
 	"github.com/minhthong176881/Server_Management/services/userService"
+	"github.com/minhthong176881/Server_Management/workers"
 )
 
 func main() {
@@ -38,14 +39,16 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	mongoServerService := serverService.NewMongoServerService()
 	redisServerService := serverService.NewRedisServerService(mongoServerService)
 	user := userService.NewUser(mongoServerService)
-	serverStatus := serverStatusService.NewServerStatus(mongoServerService)
-	elasticsearchServerService := serverLogService.NewElasticsearchServerService(mongoServerService)
+	elasticsearchServerService := serverLogService.NewElasticsearchServerService()
 	serverLog := serverLogService.NewServerLog(elasticsearchServerService)
+	serverStatusUpdateWorker := workers.NewServerStatusUpdateWorker(redisServerService, serverLog)
+	serverStatus := serverStatusService.NewServerStatus(serverStatusUpdateWorker)
 	// time.Sleep(30 * time.Second)
-	// elasticsearchServerService := services.NewElasticsearchServerService(*redisServerService)
+
 	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user))
 
 	// Serve gRPC Server
@@ -55,7 +58,7 @@ func main() {
 	}()
 
 	go func() {
-		serverLogService.ExecuteCronJob()
+		serverStatusUpdateWorker.ExecuteCronJob()
 	}()
 
 	err = gateway.Run("dns:///" + addr)
