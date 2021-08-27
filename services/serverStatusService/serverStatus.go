@@ -14,10 +14,6 @@ func NewServerStatus(serverStatusService ServerStatusService) *ServerStatus {
 	}
 }
 
-func (s *ServerStatus) Export() (string, error) {
-	return s.serverStatusService.Export()
-}
-
 func (s *ServerStatus) Check(server *serverService.Server) (bool, error) {
 	return s.serverStatusService.Check(server)
 }

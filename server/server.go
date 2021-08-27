@@ -2,7 +2,12 @@ package server
 
 import (
 	"context"
+	"log"
+	"os"
+	"strconv"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
+	"github.com/joho/godotenv"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
 	"github.com/minhthong176881/Server_Management/services/serverLogService"
 	"github.com/minhthong176881/Server_Management/services/serverService"
@@ -124,10 +129,54 @@ func (b *Backend) DeleteServer(ctx context.Context, req *pbSM.GetServerByIdReque
 }
 
 func (b *Backend) ExportServers(ctx context.Context, req *pbSM.ExportServersRequest) (*pbSM.ExportServersResponse, error) {
-	downloadUrl, err := b.serverStatus.Export()
+	var myTableName = "Server list"
+	f := excelize.NewFile()
+	f.DeleteSheet("Sheet1")
+	index := f.NewSheet(myTableName)
+	_ = f.SetCellValue(myTableName, "A2", "Server")
+	_ = f.SetCellValue(myTableName, "B2", "IP")
+	_ = f.SetCellValue(myTableName, "C2", "Username")
+	_ = f.SetCellValue(myTableName, "D2", "Password")
+	_ = f.SetCellValue(myTableName, "E2", "Status")
+	_ = f.SetCellValue(myTableName, "F2", "Password validate")
+	_ = f.SetCellValue(myTableName, "G2", "Description")
+
+	servers, _, err := b.baseService.GetAll(serverService.Query{})
 	if err != nil {
 		return nil, err
 	}
+	for i := 3; i < len(servers)+3; i++ {
+		num := strconv.FormatInt(int64(i), 10)
+		var status string
+		if servers[i-3].Status {
+			status = "On"
+		} else {
+			status = "Off"
+		}
+		var validate string
+		if servers[i-3].Validate {
+			validate = "Valid"
+		} else {
+			validate = "Invalid"
+		}
+		_ = f.SetCellValue(myTableName, "A"+num, i-2)
+		_ = f.SetCellValue(myTableName, "B"+num, servers[i-3].Ip)
+		_ = f.SetCellValue(myTableName, "C"+num, servers[i-3].Username)
+		_ = f.SetCellValue(myTableName, "D"+num, servers[i-3].Password)
+		_ = f.SetCellValue(myTableName, "E"+num, status)
+		_ = f.SetCellValue(myTableName, "F"+num, validate)
+		_ = f.SetCellValue(myTableName, "G"+num, servers[i-3].Description)
+	}
+	f.SetActiveSheet(index)
+	f.Path = "public/OpenAPI/exports/Server_list.xlsx"
+	_ = f.Save()
+
+	err = godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+	host := os.Getenv("HOST")
+	downloadUrl := host + "/exports/Server_list.xlsx"
 	return &pbSM.ExportServersResponse{DownloadUrl: downloadUrl}, nil
 }
 

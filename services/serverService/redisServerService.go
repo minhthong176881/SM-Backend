@@ -141,22 +141,6 @@ func (inst *RedisServerService) Delete(id string) error {
 	return inst.baseService.Delete(id)
 }
 
-// func (inst *RedisServerService) Export() (string, error) {
-// 	return inst.baseService.Export()
-// }
-
-// func (inst *RedisServerService) Check(id string) (bool, error) {
-// 	return inst.baseService.Check(id)
-// }
-
-// func (inst *RedisServerService) Validate(id string) (bool, error) {
-// 	return inst.baseService.Validate(id)
-// }
-
-// func (inst *RedisServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
-// 	return inst.baseService.GetLog(id, start, end, date, month)
-// }
-
 func Get(client *redis.Client, cacheKey string, result interface{}, dependencyKeys []string) error {
 	var dependencyResult []string
 	var redisCache *RedisCache

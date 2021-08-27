@@ -3,14 +3,10 @@ package workers
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/360EntSecGroup-Skylar/excelize/v2"
-	"github.com/joho/godotenv"
 	"github.com/minhthong176881/Server_Management/services/serverLogService"
 	"github.com/minhthong176881/Server_Management/services/serverService"
 	"github.com/minhthong176881/Server_Management/utils"
@@ -26,57 +22,6 @@ func NewServerStatusUpdateWorker(serverService serverService.ServerService, serv
 		serverService:       serverService,
 		serverLogService:    serverLogService,
 	}
-}
-
-func (w *ServerStatusUpdateWorker) Export() (string, error) {
-	var myTableName = "Server list"
-	f := excelize.NewFile()
-	f.DeleteSheet("Sheet1")
-	index := f.NewSheet(myTableName)
-	_ = f.SetCellValue(myTableName, "A2", "Server")
-	_ = f.SetCellValue(myTableName, "B2", "IP")
-	_ = f.SetCellValue(myTableName, "C2", "Username")
-	_ = f.SetCellValue(myTableName, "D2", "Password")
-	_ = f.SetCellValue(myTableName, "E2", "Status")
-	_ = f.SetCellValue(myTableName, "F2", "Password validate")
-	_ = f.SetCellValue(myTableName, "G2", "Description")
-
-	servers, _, err := w.serverService.GetAll(serverService.Query{})
-	if err != nil {
-		return "", err
-	}
-	for i := 3; i < len(servers)+3; i++ {
-		num := strconv.FormatInt(int64(i), 10)
-		var status string
-		if servers[i-3].Status {
-			status = "On"
-		} else {
-			status = "Off"
-		}
-		var validate string
-		if servers[i-3].Validate {
-			validate = "Valid"
-		} else {
-			validate = "Invalid"
-		}
-		_ = f.SetCellValue(myTableName, "A"+num, i-2)
-		_ = f.SetCellValue(myTableName, "B"+num, servers[i-3].Ip)
-		_ = f.SetCellValue(myTableName, "C"+num, servers[i-3].Username)
-		_ = f.SetCellValue(myTableName, "D"+num, servers[i-3].Password)
-		_ = f.SetCellValue(myTableName, "E"+num, status)
-		_ = f.SetCellValue(myTableName, "F"+num, validate)
-		_ = f.SetCellValue(myTableName, "G"+num, servers[i-3].Description)
-	}
-	f.SetActiveSheet(index)
-	f.Path = "public/OpenAPI/exports/Server_list.xlsx"
-	_ = f.Save()
-
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-	host := os.Getenv("HOST")
-	return host + "/exports/Server_list.xlsx", nil
 }
 
 func (w *ServerStatusUpdateWorker) Check(server *serverService.Server) (bool, error) {

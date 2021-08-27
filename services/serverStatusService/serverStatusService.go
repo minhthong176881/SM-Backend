@@ -5,7 +5,6 @@ import (
 )
 
 type ServerStatusService interface {
-	Export() (string, error)
 	Check(server *serverService.Server) (bool, error)
 	Validate(server *serverService.Server) (bool, error)
 }
