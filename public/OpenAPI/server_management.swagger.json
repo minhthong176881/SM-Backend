@@ -380,6 +380,30 @@
         ]
       }
     },
+    "/api/v1/users/logout": {
+      "get": {
+        "summary": "Logout an user",
+        "description": "Log an user out.",
+        "operationId": "SMService_Logout",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementLogoutResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/api/v1/users/register": {
       "post": {
         "summary": "Add an user",
@@ -539,7 +563,15 @@
     "server_managementLoginResponse": {
       "type": "object",
       "properties": {
-        "logged": {
+        "accessToken": {
+          "type": "string"
+        }
+      }
+    },
+    "server_managementLogoutResponse": {
+      "type": "object",
+      "properties": {
+        "loggedOut": {
           "type": "boolean"
         }
       }
@@ -606,6 +638,9 @@
           "type": "string"
         },
         "email": {
+          "type": "string"
+        },
+        "role": {
           "type": "string"
         }
       }

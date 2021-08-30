@@ -29,6 +29,7 @@ type SMServiceClient interface {
 	ValidateServer(ctx context.Context, in *GetServerByIdRequest, opts ...grpc.CallOption) (*ValidateServerResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*User, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 }
 
 type sMServiceClient struct {
@@ -138,6 +139,15 @@ func (c *sMServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...g
 	return out, nil
 }
 
+func (c *sMServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+	out := new(LogoutResponse)
+	err := c.cc.Invoke(ctx, "/server_management.SMService/Logout", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SMServiceServer is the server API for SMService service.
 // All implementations should embed UnimplementedSMServiceServer
 // for forward compatibility
@@ -153,6 +163,7 @@ type SMServiceServer interface {
 	ValidateServer(context.Context, *GetServerByIdRequest) (*ValidateServerResponse, error)
 	Register(context.Context, *RegisterRequest) (*User, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 }
 
 // UnimplementedSMServiceServer should be embedded to have forward compatible implementations.
@@ -191,6 +202,9 @@ func (UnimplementedSMServiceServer) Register(context.Context, *RegisterRequest) 
 }
 func (UnimplementedSMServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedSMServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
 
 // UnsafeSMServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -402,6 +416,24 @@ func _SMService_Login_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SMService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SMServiceServer).Logout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/server_management.SMService/Logout",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SMServiceServer).Logout(ctx, req.(*LogoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SMService_ServiceDesc is the grpc.ServiceDesc for SMService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -452,6 +484,10 @@ var SMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _SMService_Login_Handler,
+		},
+		{
+			MethodName: "Logout",
+			Handler:    _SMService_Logout_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

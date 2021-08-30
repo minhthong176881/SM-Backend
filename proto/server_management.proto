@@ -46,6 +46,7 @@ message User {
   string username = 2;
   string password = 3;
   string email = 4;
+  string role = 5;
 }
 
 message GetServersRequest {
@@ -113,7 +114,13 @@ message LoginRequest {
 }
 
 message LoginResponse {
-bool logged = 1;
+  string access_token = 1;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {
+  bool loggedOut = 1;
 }
 
 service SMService {
@@ -238,6 +245,17 @@ service SMService {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
         summary: "Login an user"
         description: "Log an user."
+        tags: "Users"
+      };
+    };
+
+    rpc Logout (LogoutRequest) returns (LogoutResponse) {
+      option (google.api.http) = {
+          get: "/api/v1/users/logout"
+        };
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Logout an user"
+        description: "Log an user out."
         tags: "Users"
       };
     };

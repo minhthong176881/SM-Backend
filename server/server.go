@@ -9,10 +9,10 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/joho/godotenv"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
-	"github.com/minhthong176881/Server_Management/services/serverLogService"
-	"github.com/minhthong176881/Server_Management/services/serverService"
-	"github.com/minhthong176881/Server_Management/services/serverStatusService"
-	"github.com/minhthong176881/Server_Management/services/userService"
+	"github.com/minhthong176881/Server_Management/service/serverLogService"
+	"github.com/minhthong176881/Server_Management/service/serverService"
+	"github.com/minhthong176881/Server_Management/service/serverStatusService"
+	"github.com/minhthong176881/Server_Management/service/userService"
 	"github.com/minhthong176881/Server_Management/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -41,6 +41,7 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 		Username: req.User.Username,
 		Password: req.User.Password,
 		Email:    req.User.Email,
+		Role:     req.User.Role,
 	}
 	result, err := b.user.Register(&data)
 	if err != nil {
@@ -51,11 +52,20 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 }
 
 func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.LoginResponse, error) {
-	logged, err := b.user.Login(req.GetUsername(), req.GetPassword())
+	token, err := b.user.Login(req.GetUsername(), req.GetPassword())
 	if err != nil {
 		return nil, err
 	}
-	return &pbSM.LoginResponse{Logged: logged}, nil
+	
+	return &pbSM.LoginResponse{AccessToken: token}, nil
+}
+
+func (b *Backend) Logout(context.Context, *pbSM.LogoutRequest) (*pbSM.LogoutResponse, error) {
+	loggedOut, err := b.user.Logout()
+	if err != nil {
+		return nil, err
+	}
+	return &pbSM.LogoutResponse{LoggedOut: loggedOut}, nil
 }
 
 func (b *Backend) GetServers(_ context.Context, req *pbSM.GetServersRequest) (*pbSM.GetServersResponse, error) {

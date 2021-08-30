@@ -1,4 +1,4 @@
-package workers
+package worker
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minhthong176881/Server_Management/services/serverLogService"
-	"github.com/minhthong176881/Server_Management/services/serverService"
+	"github.com/minhthong176881/Server_Management/service/serverLogService"
+	"github.com/minhthong176881/Server_Management/service/serverService"
 	"github.com/minhthong176881/Server_Management/utils"
 )
 

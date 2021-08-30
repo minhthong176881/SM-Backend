@@ -12,7 +12,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"github.com/minhthong176881/Server_Management/utils"
-	serverService "github.com/minhthong176881/Server_Management/services/serverService"
+	serverService "github.com/minhthong176881/Server_Management/service/serverService"
 	elastic "github.com/olivere/elastic/v7"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -17,7 +17,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	pbSM "github.com/minhthong176881/Server_Management/proto"
-	serverService "github.com/minhthong176881/Server_Management/services/serverService"
+	serverService "github.com/minhthong176881/Server_Management/service/serverService"
 )
 
 type Connection struct {

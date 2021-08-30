@@ -60,14 +60,6 @@ func ping(inst *redis.Client) (string, error) {
 	}
 }
 
-// func (inst *RedisServerService) Register(user *User) (string, error) {
-// 	return inst.baseService.Register(user)
-// }
-
-// func (inst *RedisServerService) Login(username string, password string) (bool, error) {
-// 	return inst.baseService.Login(username, password)
-// }
-
 func (inst *RedisServerService) GetAll(query Query) ([]*Server, int64, error) {
 	var data *GetAllResponse
 	option := "skip=" + strconv.Itoa(int((query.PageIndex-1)*query.PageOffset)) + "&offset=" + strconv.Itoa(int(query.PageOffset))

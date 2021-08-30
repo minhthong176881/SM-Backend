@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
+
 	// "time"
 
 	"google.golang.org/grpc"
@@ -13,13 +15,19 @@ import (
 	"github.com/minhthong176881/Server_Management/gateway"
 	"github.com/minhthong176881/Server_Management/insecure"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
-	server "github.com/minhthong176881/Server_Management/server"
-	"github.com/minhthong176881/Server_Management/services/serverLogService"
-	"github.com/minhthong176881/Server_Management/services/serverService"
-	"github.com/minhthong176881/Server_Management/services/serverStatusService"
-	"github.com/minhthong176881/Server_Management/services/userService"
-	"github.com/minhthong176881/Server_Management/workers"
+	"github.com/minhthong176881/Server_Management/server"
+	"github.com/minhthong176881/Server_Management/middleware"
+	"github.com/minhthong176881/Server_Management/service/serverLogService"
+	"github.com/minhthong176881/Server_Management/service/serverService"
+	"github.com/minhthong176881/Server_Management/service/serverStatusService"
+	"github.com/minhthong176881/Server_Management/service/userService"
+	"github.com/minhthong176881/Server_Management/worker"
 )
+
+// func streamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+// 	log.Print("-> stream interceptor: ", info.FullMethod)
+// 	return handler(srv, ss)
+// }
 
 func main() {
 	// Adds gRPC internal logs. This is quite verbose, so adjust as desired!
@@ -32,9 +40,14 @@ func main() {
 		log.Fatalln("Failed to listen:", err)
 	}
 
+	jwtManager := middleware.NewJWTManager("secret", 15*time.Minute)
+	interceptor := middleware.NewAuthInterceptor(jwtManager, middleware.AccesibleRoles())
+
 	s := grpc.NewServer(
 		// TODO: Replace with your own certificate!
 		grpc.Creds(credentials.NewServerTLSFromCert(&insecure.Cert)),
+		grpc.UnaryInterceptor(interceptor.Unary()),
+		// grpc.StreamInterceptor(streamInterceptor),
 	)
 	if err != nil {
 		log.Fatalln(err)
@@ -42,10 +55,10 @@ func main() {
 
 	mongoServerService := serverService.NewMongoServerService()
 	redisServerService := serverService.NewRedisServerService(mongoServerService)
-	user := userService.NewUser(mongoServerService)
+	user := userService.NewUser(mongoServerService, jwtManager)
 	elasticsearchServerService := serverLogService.NewElasticsearchServerService()
 	serverLog := serverLogService.NewServerLog(elasticsearchServerService)
-	serverStatusUpdateWorker := workers.NewServerStatusUpdateWorker(redisServerService, serverLog)
+	serverStatusUpdateWorker := worker.NewServerStatusUpdateWorker(redisServerService, serverLog)
 	serverStatus := serverStatusService.NewServerStatus(serverStatusUpdateWorker)
 	// time.Sleep(30 * time.Second)
 

@@ -42,26 +42,6 @@ func NewMongoServerService() *MongoServerService {
 	}
 }
 
-// func (inst *MongoServerService) Register(user *User) (string, error) {
-// 	result, err := inst.userCollection.InsertOne(context.Background(), user)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
-// }
-
-// func (inst *MongoServerService) Login(username string, password string) (bool, error) {
-// 	result := inst.userCollection.FindOne(context.Background(), bson.M{"username": username})
-// 	data := User{}
-// 	if err := result.Decode(&data); err != nil {
-// 		return false, status.Errorf(codes.NotFound, fmt.Sprintf("Could not find user with Username %s: %v", username, err))
-// 	}
-// 	if data.Password == password {
-// 		return true, nil
-// 	}
-// 	return false, status.Error(codes.NotFound, "Username or Password is incorrect!")
-// }
-
 func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 	var servers []*Server
 	var queryDB bson.M

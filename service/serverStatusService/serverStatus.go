@@ -1,7 +1,7 @@
 package serverStatusService
 
 import (
-	"github.com/minhthong176881/Server_Management/services/serverService"
+	"github.com/minhthong176881/Server_Management/service/serverService"
 )
 
 type ServerStatus struct {
