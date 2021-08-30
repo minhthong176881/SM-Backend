@@ -55,14 +55,14 @@ func main() {
 
 	mongoServerService := serverService.NewMongoServerService()
 	redisServerService := serverService.NewRedisServerService(mongoServerService)
-	user := userService.NewUser(mongoServerService, jwtManager)
+	user := userService.NewUser(mongoServerService)
 	elasticsearchServerService := serverLogService.NewElasticsearchServerService()
 	serverLog := serverLogService.NewServerLog(elasticsearchServerService)
 	serverStatusUpdateWorker := worker.NewServerStatusUpdateWorker(redisServerService, serverLog)
 	serverStatus := serverStatusService.NewServerStatus(serverStatusUpdateWorker)
 	// time.Sleep(30 * time.Second)
 
-	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user))
+	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user, jwtManager))
 
 	// Serve gRPC Server
 	log.Info("Serving gRPC on https://", addr)

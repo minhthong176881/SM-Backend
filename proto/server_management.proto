@@ -133,7 +133,8 @@ message LoginResponse {
   string access_token = 1;
 }
 
-message LogoutRequest {}
+message LogoutRequest {
+}
 
 message LogoutResponse {
   bool loggedOut = 1;
@@ -275,7 +276,6 @@ service SMService {
         summary: "Logout an user"
         description: "Log an user out."
         tags: "Users"
-        security: { }
       };
     };
 }

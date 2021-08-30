@@ -2,13 +2,14 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
+	"github.com/go-redis/redis/v8"
+	"github.com/minhthong176881/Server_Management/service/serverService"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-
-	// "google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -47,6 +48,7 @@ func AccesibleRoles() map[string][]string {
 		path + "CheckServer": {"admin"},
 		path + "ValidateServer": {"admin"},
 		path + "GetServerLog": {"admin"},
+		path + "Logout": {"admin", "user"},
 	}
 }
 
@@ -67,6 +69,13 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 	}
 
 	accessToken := values[0]
+	valid, err := interceptor.IsValidToken(accessToken)
+	if err != nil {
+		return status.Errorf(codes.Internal, "internal error: %", err)
+	}
+	if !valid{
+		return status.Errorf(codes.Unauthenticated, "access token is invalid: %v", err)
+	}
 	claims, err := interceptor.jwtManager.Verify(accessToken)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "access token is invalid: %v", err)
@@ -78,4 +87,27 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 		}
 	}
 	return status.Error(codes.PermissionDenied, "no permission to access this RPC")
+}
+
+func (interceptor *AuthInterceptor) IsValidToken(token string) (bool, error) {
+	redisClient := serverService.NewClient()
+	defer redisClient.Close()
+	var usedToken []string
+	cache, err := redisClient.Get(redisClient.Context(), "usedToken").Result()
+	if err != nil && (err.Error() != string(redis.Nil)) {
+		return false, err
+	}
+	if cache != "" {
+		err = json.Unmarshal([]byte(cache), &usedToken)
+		if err != nil {
+			return false, err
+		}
+		for _, t := range usedToken {
+			if token == t {
+				return false, nil
+			}
+		} 
+		return true, nil
+	}
+	return true, nil
 }

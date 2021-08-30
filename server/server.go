@@ -2,12 +2,14 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/joho/godotenv"
+	"github.com/minhthong176881/Server_Management/middleware"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
 	"github.com/minhthong176881/Server_Management/service/serverLogService"
 	"github.com/minhthong176881/Server_Management/service/serverService"
@@ -15,6 +17,7 @@ import (
 	"github.com/minhthong176881/Server_Management/service/userService"
 	"github.com/minhthong176881/Server_Management/utils"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -23,14 +26,16 @@ type Backend struct {
 	serverLog    serverLogService.ServerLogService
 	serverStatus serverStatusService.ServerStatusService
 	user         userService.UserService
+	jwtManager   *middleware.JWTManager
 }
 
-func New(base serverService.ServerService, serverLog serverLogService.ServerLogService, serverStatus serverStatusService.ServerStatusService, user userService.UserService) *Backend {
+func New(base serverService.ServerService, serverLog serverLogService.ServerLogService, serverStatus serverStatusService.ServerStatusService, user userService.UserService, jwtManager *middleware.JWTManager) *Backend {
 	return &Backend{
 		baseService:  base,
 		serverLog:    serverLog,
 		serverStatus: serverStatus,
 		user:         user,
+		jwtManager:   jwtManager,
 	}
 }
 
@@ -52,16 +57,36 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 }
 
 func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.LoginResponse, error) {
-	token, err := b.user.Login(req.GetUsername(), req.GetPassword())
+	data, err := b.user.Login(req.GetUsername(), req.GetPassword())
 	if err != nil {
 		return nil, err
 	}
 	
+	jwtData := middleware.UserItem {
+		ID: data.ID,
+		Username: data.Username,
+		Email: data.Email,
+		Role: data.Role,
+		Password: data.Password,
+	}
+	token, err := b.jwtManager.Generate(&jwtData)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, fmt.Sprintf("Internal error %v", err))
+	}
 	return &pbSM.LoginResponse{AccessToken: token}, nil
 }
 
-func (b *Backend) Logout(context.Context, *pbSM.LogoutRequest) (*pbSM.LogoutResponse, error) {
-	loggedOut, err := b.user.Logout()
+func (b *Backend) Logout(ctx context.Context, req *pbSM.LogoutRequest) (*pbSM.LogoutResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
+	}
+
+	values := md["authorization"]
+	if len(values) == 0 { // no auth header
+		return nil, status.Errorf(codes.Unauthenticated, "authorization token is not provided")
+	}
+	loggedOut, err := b.user.Logout(values[0])
 	if err != nil {
 		return nil, err
 	}

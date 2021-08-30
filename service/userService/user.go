@@ -2,9 +2,10 @@ package userService
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
-	"github.com/minhthong176881/Server_Management/middleware"
+	"github.com/go-redis/redis/v8"
 	"github.com/minhthong176881/Server_Management/service/serverService"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,11 +16,12 @@ import (
 
 type User struct {
 	mongoService *serverService.MongoServerService
-	jwtManager   *middleware.JWTManager
+	redisClient  *redis.Client
 }
 
-func NewUser(mongoService *serverService.MongoServerService, jwtManager *middleware.JWTManager) *User {
-	return &User{mongoService: mongoService, jwtManager: jwtManager}
+func NewUser(mongoService *serverService.MongoServerService) *User {
+	redisClient := serverService.NewClient()
+	return &User{mongoService: mongoService, redisClient: redisClient}
 }
 
 func (u *User) Register(user *UserItem) (string, error) {
@@ -36,32 +38,46 @@ func (u *User) Register(user *UserItem) (string, error) {
 	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (u *User) Login(username string, password string) (string, error) {
+func (u *User) Login(username string, password string) (*UserItem, error) {
 	result := u.mongoService.UserCollection.FindOne(context.Background(), bson.M{"username": username})
 	data := UserItem{}
 	if err := result.Decode(&data); err != nil {
-		return "", status.Errorf(codes.NotFound, fmt.Sprintf("Could not find user with Username %s: %v", username, err))
+		return nil, status.Errorf(codes.NotFound, fmt.Sprintf("Could not find user with Username %s: %v", username, err))
 	}
 	err := bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(password))
 	if err != nil {
-		return "", status.Errorf(codes.Unauthenticated, fmt.Sprintf("Invalid password for user %s", username))
+		return nil, status.Errorf(codes.Unauthenticated, fmt.Sprintf("Invalid password for user %s", username))
 	}
-
-	jwtData := middleware.UserItem {
-		ID: data.ID,
-		Username: data.Username,
-		Email: data.Email,
-		Role: data.Role,
-		Password: data.Password,
-	}
-	token, err := u.jwtManager.Generate(&jwtData)
-	if err != nil {
-		return "", status.Errorf(codes.Internal, fmt.Sprintf("Internal error %v", err))
-	}
-	return token, nil
+	return &data, nil
 }
 
-func (u *User) Logout() (bool, error) {
+func (u *User) Logout(token string) (bool, error) {
+	err := u.HandleLogout(token)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
+func (u *User) HandleLogout(token string) error {
+	var usedToken []string
+	cache, err := u.redisClient.Get(u.redisClient.Context(), "usedToken").Result()
+	if err != nil && (err.Error() != string(redis.Nil)) {
+		return err
+	}
+	if cache != "" {
+		err = json.Unmarshal([]byte(cache), &usedToken)
+		if err != nil {
+			return err
+		}
+		usedToken = append(usedToken, token)
+	} else {
+		usedToken = append(usedToken, token)
+	}
+	redisVal, err := json.Marshal(usedToken)
+		if err != nil {
+			return err
+		}
+		u.redisClient.Set(u.redisClient.Context(), "usedToken", redisVal, 0)
+	return nil
+}

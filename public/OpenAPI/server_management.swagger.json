@@ -402,8 +402,7 @@
         },
         "tags": [
           "Users"
-        ],
-        "security": []
+        ]
       }
     },
     "/api/v1/users/register": {
