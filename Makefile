@@ -1,3 +1,9 @@
+redis:
+	redis-server --daemonize yes
+
+run:
+	go run main.go
+
 generate:
 	buf generate
 

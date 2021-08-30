@@ -377,7 +377,8 @@
         ],
         "tags": [
           "Users"
-        ]
+        ],
+        "security": []
       }
     },
     "/api/v1/users/logout": {
@@ -401,7 +402,8 @@
         },
         "tags": [
           "Users"
-        ]
+        ],
+        "security": []
       }
     },
     "/api/v1/users/register": {
@@ -435,7 +437,8 @@
         ],
         "tags": [
           "Users"
-        ]
+        ],
+        "security": []
       }
     }
   },
@@ -654,6 +657,19 @@
       }
     }
   },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Authentication token, prefixed by Bearer: Bearer \u003ctoken\u003e",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
   "externalDocs": {
     "description": "gRPC-gateway boilerplate repository",
     "url": "https://google.com"

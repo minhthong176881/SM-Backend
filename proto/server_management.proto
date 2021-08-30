@@ -16,11 +16,20 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       description: "gRPC-gateway boilerplate repository";
     }
     schemes: HTTPS;
-    securityDefinitions: {
-      Bearer: {
-        type: "apiKey";
-        name: "Authorization";
-        in: "header";
+    security_definitions: {
+      security: {
+        key: "bearer"
+        value: {
+          type: TYPE_API_KEY
+          in: IN_HEADER
+          name: "Authorization"
+          description: "Authentication token, prefixed by Bearer: Bearer <token>"
+        }
+      }
+    }
+    security: {
+      security_requirement: {
+        key: "bearer"
       }
     };
   };
@@ -139,7 +148,6 @@ service SMService {
             summary: "List all servers"
             description: "List all servers on the server."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -152,7 +160,6 @@ service SMService {
             summary: "Add a server"
             description: "Add a server to the server."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -164,7 +171,6 @@ service SMService {
             summary: "Get specific server information"
             description: "Get specific server information."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -177,7 +183,6 @@ service SMService {
             summary: "Update specific server information"
             description: "Update specific server information."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -189,7 +194,6 @@ service SMService {
             summary: "Delete specific server information"
             description: "Delete specific server information."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -201,7 +205,6 @@ service SMService {
             summary: "Export all server informations"
             description: "Export all server informations."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -213,7 +216,6 @@ service SMService {
             summary: "Check specific server information"
             description: "Check specific server information."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -225,7 +227,6 @@ service SMService {
             summary: "Get specific server log"
             description: "Get specific server log."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     };
 
@@ -237,7 +238,6 @@ service SMService {
             summary: "Validate specific server password"
             description: "Validate specific server password."
             tags: "Servers"
-            security: [{Bearer: []}]
           };
     }; 
 
@@ -250,6 +250,7 @@ service SMService {
           summary: "Add an user"
           description: "Add an user to the server."
           tags: "Users"
+          security: { }
         };
     };
 
@@ -262,6 +263,7 @@ service SMService {
         summary: "Login an user"
         description: "Log an user."
         tags: "Users"
+        security: { }
       };
     };
 
@@ -273,6 +275,7 @@ service SMService {
         summary: "Logout an user"
         description: "Log an user out."
         tags: "Users"
+        security: { }
       };
     };
 }

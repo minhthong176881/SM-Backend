@@ -6,10 +6,9 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 
 	// "google.golang.org/grpc/metadata"
-	"github.com/go-redis/redis/v8"
-	"github.com/minhthong176881/Server_Management/service/serverService"
 	"google.golang.org/grpc/status"
 )
 
@@ -57,25 +56,17 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 		return nil
 	}
 
-	// md, ok := metadata.FromIncomingContext(ctx)
-	// if !ok {
-	// 	return status.Errorf(codes.Unauthenticated, "metadata is not provided")
-	// }
-
-	// values := md["authorization"]
-	// if len(values) == 0 { // no auth header
-	// 	return status.Errorf(codes.Unauthenticated, "authorization token is not provided")
-	// }
-
-	// accessToken := values[0]
-	redisClient := serverService.NewClient()
-	accessToken, err := redisClient.Get(redisClient.Context(), "accessToken").Result()
-	if err != nil && (err.Error() != string(redis.Nil)) {
-		return err
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return status.Errorf(codes.Unauthenticated, "metadata is not provided")
 	}
-	if accessToken == "" {
+
+	values := md["authorization"]
+	if len(values) == 0 { // no auth header
 		return status.Errorf(codes.Unauthenticated, "authorization token is not provided")
 	}
+
+	accessToken := values[0]
 	claims, err := interceptor.jwtManager.Verify(accessToken)
 	if err != nil {
 		return status.Errorf(codes.Unauthenticated, "access token is invalid: %v", err)

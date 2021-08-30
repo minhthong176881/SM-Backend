@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/minhthong176881/Server_Management/middleware"
 	"github.com/minhthong176881/Server_Management/service/serverService"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,12 +16,10 @@ import (
 type User struct {
 	mongoService *serverService.MongoServerService
 	jwtManager   *middleware.JWTManager
-	redisClient *redis.Client
 }
 
 func NewUser(mongoService *serverService.MongoServerService, jwtManager *middleware.JWTManager) *User {
-	redisClient := serverService.NewClient()
-	return &User{mongoService: mongoService, jwtManager: jwtManager, redisClient: redisClient}
+	return &User{mongoService: mongoService, jwtManager: jwtManager}
 }
 
 func (u *User) Register(user *UserItem) (string, error) {
@@ -49,10 +46,7 @@ func (u *User) Login(username string, password string) (string, error) {
 	if err != nil {
 		return "", status.Errorf(codes.Unauthenticated, fmt.Sprintf("Invalid password for user %s", username))
 	}
-	err = u.ClearRedisToken()
-	if err != nil {
-		return "", status.Errorf(codes.Internal, fmt.Sprintf("Internal error %v", err))
-	}
+
 	jwtData := middleware.UserItem {
 		ID: data.ID,
 		Username: data.Username,
@@ -64,31 +58,10 @@ func (u *User) Login(username string, password string) (string, error) {
 	if err != nil {
 		return "", status.Errorf(codes.Internal, fmt.Sprintf("Internal error %v", err))
 	}
-	err = u.redisClient.Set(u.redisClient.Context(), "accessToken", token, 0).Err()
-	if err != nil {
-		return "", status.Errorf(codes.Internal, fmt.Sprintf("Internal error %v", err))
-	}
 	return token, nil
 }
 
 func (u *User) Logout() (bool, error) {
-	err := u.ClearRedisToken()
-	if err != nil {
-		return false, err
-	}
 	return true, nil
 }
 
-func (u *User) ClearRedisToken() error {
-	tokenCache, err := u.redisClient.Get(u.redisClient.Context(), "accessToken").Result()
-	if err != nil && (err.Error() != string(redis.Nil)) {
-		return err
-	}
-	if tokenCache != "" {
-		err = u.redisClient.Del(u.redisClient.Context(), "accessToken").Err()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
