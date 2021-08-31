@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 
 	"github.com/go-redis/redis/v8"
@@ -92,22 +91,12 @@ func (interceptor *AuthInterceptor) authorize(ctx context.Context, method string
 func (interceptor *AuthInterceptor) IsValidToken(token string) (bool, error) {
 	redisClient := serverService.NewClient()
 	defer redisClient.Close()
-	var usedToken []string
-	cache, err := redisClient.Get(redisClient.Context(), "usedToken").Result()
+	cache, err := redisClient.Get(redisClient.Context(), token).Result()
 	if err != nil && (err.Error() != string(redis.Nil)) {
 		return false, err
 	}
 	if cache != "" {
-		err = json.Unmarshal([]byte(cache), &usedToken)
-		if err != nil {
-			return false, err
-		}
-		for _, t := range usedToken {
-			if token == t {
-				return false, nil
-			}
-		} 
-		return true, nil
+		return false, nil
 	}
 	return true, nil
 }

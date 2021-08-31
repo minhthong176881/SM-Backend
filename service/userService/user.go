@@ -2,7 +2,6 @@ package userService
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-redis/redis/v8"
@@ -51,33 +50,7 @@ func (u *User) Login(username string, password string) (*UserItem, error) {
 	return &data, nil
 }
 
-func (u *User) Logout(token string) (bool, error) {
-	err := u.HandleLogout(token)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+func (u *User) Logout(token string) {
+	u.redisClient.Set(u.redisClient.Context(), token, "1", 0)
 }
 
-func (u *User) HandleLogout(token string) error {
-	var usedToken []string
-	cache, err := u.redisClient.Get(u.redisClient.Context(), "usedToken").Result()
-	if err != nil && (err.Error() != string(redis.Nil)) {
-		return err
-	}
-	if cache != "" {
-		err = json.Unmarshal([]byte(cache), &usedToken)
-		if err != nil {
-			return err
-		}
-		usedToken = append(usedToken, token)
-	} else {
-		usedToken = append(usedToken, token)
-	}
-	redisVal, err := json.Marshal(usedToken)
-		if err != nil {
-			return err
-		}
-		u.redisClient.Set(u.redisClient.Context(), "usedToken", redisVal, 0)
-	return nil
-}

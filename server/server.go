@@ -86,11 +86,8 @@ func (b *Backend) Logout(ctx context.Context, req *pbSM.LogoutRequest) (*pbSM.Lo
 	if len(values) == 0 { // no auth header
 		return nil, status.Errorf(codes.Unauthenticated, "authorization token is not provided")
 	}
-	loggedOut, err := b.user.Logout(values[0])
-	if err != nil {
-		return nil, err
-	}
-	return &pbSM.LogoutResponse{LoggedOut: loggedOut}, nil
+	b.user.Logout(values[0])
+	return &pbSM.LogoutResponse{LoggedOut: true}, nil
 }
 
 func (b *Backend) GetServers(_ context.Context, req *pbSM.GetServersRequest) (*pbSM.GetServersResponse, error) {
