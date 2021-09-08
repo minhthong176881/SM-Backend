@@ -6,7 +6,7 @@ require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.4.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.1
-	github.com/golang/glog v0.0.0-20210429001901-424d2337a529
+	github.com/gorilla/handlers v1.5.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.5.0
 	github.com/joho/godotenv v1.3.0
 	github.com/olivere/elastic/v7 v7.0.26

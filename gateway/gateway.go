@@ -11,12 +11,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
-
+	
+	gohandlers "github.com/gorilla/handlers"
 	"github.com/minhthong176881/Server_Management/insecure"
 	pbSM "github.com/minhthong176881/Server_Management/proto"
 	"github.com/minhthong176881/Server_Management/public"
@@ -65,16 +65,22 @@ func Run(dialAddr string) error {
 		port = "11000"
 	}
 	gatewayAddr := "0.0.0.0:" + port
+
+	// CORS
+	header := gohandlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	method := gohandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
+	origin := gohandlers.AllowedOrigins([]string{"*"})
+	ch := gohandlers.CORS(header, method, origin)
+
 	gwServer := &http.Server{
 		Addr: gatewayAddr,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		Handler: ch(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.URL.Path, "/api") {
 				gwmux.ServeHTTP(w, r)
 				return
 			}
-			// oa.ServeHTTP(w, r)
-			allowCORS(oa).ServeHTTP(w, r)
-		}),
+			oa.ServeHTTP(w, r)
+		})),
 	}
 
 	// Empty parameters mean use the TLS Config specified with the server.
@@ -91,24 +97,3 @@ func Run(dialAddr string) error {
 	return fmt.Errorf("serving gRPC-Gateway server: %w", gwServer.ListenAndServeTLS("", ""))
 }
 
-func preflightHandler(w http.ResponseWriter, r *http.Request) {
-	headers := []string{"Content-Type", "Accept"}
-	w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
-	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
-	w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
-	glog.Infof("preflight request for %s", r.URL.Path)
-	// return
-}
-
-func allowCORS(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if origin := r.Header.Get("Origin"); origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
-				preflightHandler(w, r)
-				return
-			}
-		}
-		h.ServeHTTP(w, r)
-	})
-}
