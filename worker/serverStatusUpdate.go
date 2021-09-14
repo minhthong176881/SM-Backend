@@ -103,9 +103,9 @@ func (w *ServerStatusUpdateWorker) UpdateLog() error {
 			servers[i].Validate = false
 		}
 		if validateRes {
-			servers[i].Validate = false
-		} else {
 			servers[i].Validate = true
+		} else {
+			servers[i].Validate = false
 		}
 		err = esService.Update(ctx, esService.ElasticClient, servers[i].ID.Hex(), elasticServer.Log)
 		if err != nil {
@@ -132,7 +132,7 @@ func (w *ServerStatusUpdateWorker) UpdateLog() error {
 }
 
 func (w *ServerStatusUpdateWorker) ExecuteCronJob() {
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(6000 * time.Second)
 	for range ticker.C {
 		w.UpdateLog()
 	}
