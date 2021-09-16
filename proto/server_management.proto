@@ -15,7 +15,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       url: "https://google.com";
       description: "gRPC-gateway boilerplate repository";
     }
-    schemes: HTTPS;
+    schemes: HTTP;
     security_definitions: {
       security: {
         key: "bearer"

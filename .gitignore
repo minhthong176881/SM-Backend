@@ -4,3 +4,4 @@
 DockerfileTemplate
 .env
 public/OpenAPI/exports/*
+dump.rdb
