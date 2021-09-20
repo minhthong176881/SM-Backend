@@ -46,8 +46,8 @@ func (b *Backend) Register(_ context.Context, req *pbSM.RegisterRequest) (*pbSM.
 		Username: req.User.Username,
 		Password: req.User.Password,
 		Email:    req.User.Email,
-		Role:     req.User.Role,
 	}
+	data.Role = "user"
 	result, err := b.user.Register(&data)
 	if err != nil {
 		return nil, err
