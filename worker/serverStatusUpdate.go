@@ -52,6 +52,9 @@ func (w *ServerStatusUpdateWorker) Validate(server *serverService.Server) (bool,
 	if err != nil {
 		server.Validate = false
 		_, _ = w.serverService.Update(server.ID.Hex(), server)
+		if strings.Contains(err.Error(), "none") && strings.Contains(err.Error(), "handshake") && strings.Contains(err.Error(), "none password") {
+		return false, nil
+		}
 		return false, err
 	}
 	if conn != nil {
@@ -132,7 +135,7 @@ func (w *ServerStatusUpdateWorker) UpdateLog() error {
 }
 
 func (w *ServerStatusUpdateWorker) ExecuteCronJob() {
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(600 * time.Second)
 	for range ticker.C {
 		w.UpdateLog()
 	}
