@@ -38,12 +38,15 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 message Server {
   string id = 1;
   string ip = 2;
-  int64 port = 3;
-  string username = 4;
-  string password = 5;
-  bool validate = 6;
-  bool status = 7;
-  string description = 8;
+  string name = 3;
+  int64 port = 4;
+  string username = 5;
+  string password = 6;
+  bool validate = 7;
+  bool status = 8;
+  string description = 9;
+  string created_at = 10;
+  string updated_at = 11;
 }
 
 message ServerLog {
