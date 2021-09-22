@@ -124,6 +124,7 @@ func (inst *RedisServerService) Update(id string, server *Server) (*Server, erro
 	if !reflect.DeepEqual(current, server) {
 		key := "dependency-server-" + server.ID.Hex()
 		Update(inst.redisClient, key, []string{"dependency-servers"})
+		server.UpdatedAt = strconv.FormatInt(time.Now().Unix(), 10)
 	}
 	return inst.baseService.Update(id, server)
 }

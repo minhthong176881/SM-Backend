@@ -7,12 +7,15 @@ import (
 type Server struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
 	Ip          string             `bson:"ip"`
+	Name		string             `bson:"name"`
 	Port        int64              `bson:"port"`
 	Username    string             `bson:"username"`
 	Password    string             `bson:"password"`
 	Description string             `bson:"description"`
 	Status      bool               `bson:"status"`
 	Validate    bool               `bson:"validate"`
+	CreatedAt   string             `bson:"created_at"`
+	UpdatedAt   string             `bson:"updated_at"`
 }
 
 type GetAllResponse struct {

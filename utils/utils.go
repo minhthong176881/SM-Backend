@@ -106,26 +106,32 @@ func PbSMToService(server *pbSM.Server) (*serverService.Server, error) {
 		return nil, err
 	}
 	return &serverService.Server{
-		ID: oid,
-		Ip: server.Ip,
-		Port: server.Port,
-		Username: server.Username,
-		Password: server.Password,
+		ID:          oid,
+		Ip:          server.Ip,
+		Name:        server.Name,
+		Port:        server.Port,
+		Username:    server.Username,
+		Password:    server.Password,
 		Description: server.Description,
-		Status: server.Status,
-		Validate: server.Validate,
+		Status:      server.Status,
+		Validate:    server.Validate,
+		CreatedAt:   server.CreatedAt,
+		UpdatedAt:   server.UpdatedAt,
 	}, nil
 }
 
 func ServiceToPbSM(server *serverService.Server) *pbSM.Server {
 	return &pbSM.Server{
-		Id: server.ID.Hex(),
-		Ip: server.Ip,
-		Port: server.Port,
-		Username: server.Username,
-		Password: server.Password,
+		Id:          server.ID.Hex(),
+		Ip:          server.Ip,
+		Name:        server.Name,
+		Port:        server.Port,
+		Username:    server.Username,
+		Password:    server.Password,
 		Description: server.Description,
-		Status: server.Status,
-		Validate: server.Validate,
+		Status:      server.Status,
+		Validate:    server.Validate,
+		CreatedAt:   server.CreatedAt,
+		UpdatedAt:   server.UpdatedAt,
 	}
 }

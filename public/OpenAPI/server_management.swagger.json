@@ -595,6 +595,9 @@
         "ip": {
           "type": "string"
         },
+        "name": {
+          "type": "string"
+        },
         "port": {
           "type": "string",
           "format": "int64"
@@ -612,6 +615,12 @@
           "type": "boolean"
         },
         "description": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
           "type": "string"
         }
       }

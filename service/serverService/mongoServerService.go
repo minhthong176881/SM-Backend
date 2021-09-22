@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -49,6 +51,7 @@ func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 		queryDB = bson.M{
 			"$or": []bson.M{
 				{"ip": bson.M{"$regex": primitive.Regex{Pattern: query.Query, Options: "i"}}},
+				{"name": bson.M{"$regex": primitive.Regex{Pattern: query.Query, Options: "i"}}},
 				{"port": bson.M{"$regex": primitive.Regex{Pattern: query.Query, Options: "i"}}},
 				{"username": bson.M{"$regex": primitive.Regex{Pattern: query.Query, Options: "i"}}},
 				{"password": bson.M{"$regex": primitive.Regex{Pattern: query.Query, Options: "i"}}},
@@ -62,6 +65,7 @@ func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 	opts := options.FindOptions{
 		Skip:  &skip,
 		Limit: &query.PageOffset,
+		Sort: bson.M{"created_at": -1},
 	}
 	total, err := inst.ServerCollection.CountDocuments(context.Background(), queryDB)
 	if err != nil {
@@ -81,12 +85,15 @@ func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 		server := Server{}
 		server.ID = data.ID
 		server.Ip = data.Ip
+		server.Name = data.Name
 		server.Port = data.Port
 		server.Username = data.Username
 		server.Password = data.Password
 		server.Description = data.Description
 		server.Validate = data.Validate
 		server.Status = data.Status
+		server.CreatedAt = data.CreatedAt
+		server.UpdatedAt = data.UpdatedAt
 
 		servers = append(servers, &server)
 	}
@@ -94,6 +101,7 @@ func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 }
 
 func (inst *MongoServerService) Insert(server *Server) (*Server, error) {
+	server.CreatedAt = strconv.FormatInt(time.Now().Unix(), 10)
 	result, err := inst.ServerCollection.InsertOne(context.Background(), server)
 	if err != nil {
 		return nil, err
@@ -127,12 +135,15 @@ func (inst *MongoServerService) Update(id string, server *Server) (*Server, erro
 	}
 	update := bson.M{
 		"ip":          server.Ip,
+		"name":        server.Name,
 		"port":        server.Port,
 		"username":    server.Username,
 		"password":    server.Password,
 		"description": server.Description,
 		"status":      server.Status,
 		"validate":    server.Validate,
+		"created_at":  server.CreatedAt,
+		"updated_at":  server.UpdatedAt,
 	}
 	filter := bson.M{"_id": oid}
 	result := inst.ServerCollection.FindOneAndUpdate(context.Background(), filter, bson.M{"$set": update}, options.FindOneAndUpdate().SetReturnDocument(1))
