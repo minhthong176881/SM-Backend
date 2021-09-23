@@ -346,6 +346,40 @@
         ]
       }
     },
+    "/api/v1/users/authenticate": {
+      "post": {
+        "summary": "Authenticate some user request",
+        "description": "Authenticate some user request",
+        "operationId": "SMService_Authenticate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementAuthenticateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/server_managementLoginRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Users"
+        ]
+      }
+    },
     "/api/v1/users/login": {
       "post": {
         "summary": "Login an user",
@@ -477,6 +511,14 @@
       "properties": {
         "server": {
           "$ref": "#/definitions/server_managementServer"
+        }
+      }
+    },
+    "server_managementAuthenticateResponse": {
+      "type": "object",
+      "properties": {
+        "authenticated": {
+          "type": "boolean"
         }
       }
     },

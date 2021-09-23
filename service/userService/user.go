@@ -50,6 +50,16 @@ func (u *User) Login(username string, password string) (*UserItem, error) {
 	return &data, nil
 }
 
+func (u *User) Authenticate(username string, password string) (bool) {
+	result := u.mongoService.UserCollection.FindOne(context.Background(), bson.M{"username": username})
+	data := UserItem{}
+	if err := result.Decode(&data); err != nil {
+		return false
+	}
+	err := bcrypt.CompareHashAndPassword([]byte(data.Password), []byte(password))
+	return err == nil
+}
+
 func (u *User) Logout(token string) {
 	u.redisClient.Set(u.redisClient.Context(), token, "1", 0)
 }

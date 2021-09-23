@@ -13,5 +13,6 @@ type UserItem struct {
 type UserService interface {
 	Register(user *UserItem) (string, error)
 	Login(username string, password string) (*UserItem, error)
+	Authenticate(username string, password string) (bool)
 	Logout(token string)
 }

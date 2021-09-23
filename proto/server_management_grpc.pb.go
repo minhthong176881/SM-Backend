@@ -29,6 +29,7 @@ type SMServiceClient interface {
 	ValidateServer(ctx context.Context, in *GetServerByIdRequest, opts ...grpc.CallOption) (*ValidateServerResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*User, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	Authenticate(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 }
 
@@ -139,6 +140,15 @@ func (c *sMServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...g
 	return out, nil
 }
 
+func (c *sMServiceClient) Authenticate(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error) {
+	out := new(AuthenticateResponse)
+	err := c.cc.Invoke(ctx, "/server_management.SMService/Authenticate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sMServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
 	out := new(LogoutResponse)
 	err := c.cc.Invoke(ctx, "/server_management.SMService/Logout", in, out, opts...)
@@ -163,6 +173,7 @@ type SMServiceServer interface {
 	ValidateServer(context.Context, *GetServerByIdRequest) (*ValidateServerResponse, error)
 	Register(context.Context, *RegisterRequest) (*User, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
+	Authenticate(context.Context, *LoginRequest) (*AuthenticateResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 }
 
@@ -202,6 +213,9 @@ func (UnimplementedSMServiceServer) Register(context.Context, *RegisterRequest) 
 }
 func (UnimplementedSMServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedSMServiceServer) Authenticate(context.Context, *LoginRequest) (*AuthenticateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Authenticate not implemented")
 }
 func (UnimplementedSMServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
@@ -416,6 +430,24 @@ func _SMService_Login_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SMService_Authenticate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SMServiceServer).Authenticate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/server_management.SMService/Authenticate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SMServiceServer).Authenticate(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SMService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
@@ -484,6 +516,10 @@ var SMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _SMService_Login_Handler,
+		},
+		{
+			MethodName: "Authenticate",
+			Handler:    _SMService_Authenticate_Handler,
 		},
 		{
 			MethodName: "Logout",

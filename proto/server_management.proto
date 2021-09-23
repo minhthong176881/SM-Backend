@@ -136,6 +136,10 @@ message LoginResponse {
   string access_token = 1;
 }
 
+message AuthenticateResponse {
+  bool authenticated = 1;
+}
+
 message LogoutRequest {
 }
 
@@ -270,6 +274,18 @@ service SMService {
         security: { }
       };
     };
+
+    rpc Authenticate (LoginRequest) returns (AuthenticateResponse) {
+      option (google.api.http) = {
+        post: "/api/v1/users/authenticate"
+        body: "*"
+      };
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Authenticate some user request"
+        description: "Authenticate some user request"
+        tags: "Users"
+      };
+    }
 
     rpc Logout (LogoutRequest) returns (LogoutResponse) {
       option (google.api.http) = {

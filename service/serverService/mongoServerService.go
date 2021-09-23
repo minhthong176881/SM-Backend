@@ -101,6 +101,10 @@ func (inst *MongoServerService) GetAll(query Query) ([]*Server, int64, error) {
 }
 
 func (inst *MongoServerService) Insert(server *Server) (*Server, error) {
+	serverExist := inst.CheckServerExist(server.Ip, server.Port)
+	if serverExist {
+		return nil, status.Errorf(codes.AlreadyExists, fmt.Sprintf("Server %s:%d already exist", server.Ip, server.Port))
+	}
 	server.CreatedAt = strconv.FormatInt(time.Now().Unix(), 10)
 	result, err := inst.ServerCollection.InsertOne(context.Background(), server)
 	if err != nil {
@@ -165,4 +169,13 @@ func (inst *MongoServerService) Delete(id string) error {
 	}
 	_, err = inst.ServerCollection.DeleteOne(context.Background(), bson.M{"_id": oid})
 	return err
+}
+
+func (inst *MongoServerService) CheckServerExist(ip string, port int64) (bool) {
+	var data *Server
+	result := inst.ServerCollection.FindOne(context.Background(), bson.M{"ip": ip, "port": port})
+	if err := result.Decode(&data); err != nil {
+		return false
+	}
+	return true
 }

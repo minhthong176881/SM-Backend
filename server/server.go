@@ -76,6 +76,11 @@ func (b *Backend) Login(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.Logi
 	return &pbSM.LoginResponse{AccessToken: token}, nil
 }
 
+func (b *Backend) Authenticate(ctx context.Context, req *pbSM.LoginRequest) (*pbSM.AuthenticateResponse, error) {
+	data := b.user.Authenticate(req.GetUsername(), req.GetPassword())
+	return &pbSM.AuthenticateResponse{Authenticated: data}, nil
+}
+
 func (b *Backend) Logout(ctx context.Context, req *pbSM.LogoutRequest) (*pbSM.LogoutResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
