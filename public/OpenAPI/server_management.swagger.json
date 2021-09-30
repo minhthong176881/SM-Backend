@@ -97,6 +97,45 @@
         ]
       }
     },
+    "/api/v1/servers/check_server_exists": {
+      "get": {
+        "summary": "Check if a server exists",
+        "description": "Check if a server exists.",
+        "operationId": "SMService_CheckServerExists",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementCheckServerExistsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ip",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "port",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
     "/api/v1/servers/export": {
       "get": {
         "summary": "Export all server informations",
@@ -533,6 +572,14 @@
         },
         "total": {
           "type": "string"
+        }
+      }
+    },
+    "server_managementCheckServerExistsResponse": {
+      "type": "object",
+      "properties": {
+        "exists": {
+          "type": "boolean"
         }
       }
     },

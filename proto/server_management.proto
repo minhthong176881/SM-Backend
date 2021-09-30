@@ -147,6 +147,15 @@ message LogoutResponse {
   bool loggedOut = 1;
 }
 
+message CheckServerExistsRequest {
+  string ip = 1;
+  int64 port = 2;
+}
+
+message CheckServerExistsResponse {
+  bool exists = 1;
+}
+
 service SMService {
     rpc GetServers (GetServersRequest) returns (GetServersResponse) {
         option (google.api.http) = {
@@ -297,6 +306,17 @@ service SMService {
         tags: "Users"
       };
     };
+
+    rpc CheckServerExists (CheckServerExistsRequest) returns (CheckServerExistsResponse) {
+      option (google.api.http) = {
+        get: "/api/v1/servers/check_server_exists"
+      };
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+        summary: "Check if a server exists"
+        description: "Check if a server exists."
+        tags: "Servers"
+      };
+    }
 }
 
 

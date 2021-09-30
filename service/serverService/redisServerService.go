@@ -134,6 +134,10 @@ func (inst *RedisServerService) Delete(id string) error {
 	return inst.baseService.Delete(id)
 }
 
+func (inst *RedisServerService) CheckServerExists(ip string, port int64) bool {
+	return inst.baseService.CheckServerExists(ip, port)
+}
+
 func Get(client *redis.Client, cacheKey string, result interface{}, dependencyKeys []string) error {
 	var dependencyResult []string
 	var redisCache *RedisCache
@@ -225,3 +229,4 @@ func Delete(client *redis.Client, cacheKey string, dependencyKey []string) {
 	Update(client, "", []string{"dependency-servers"})
 	client.Del(client.Context(), cacheKey)
 }
+

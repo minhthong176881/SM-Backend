@@ -40,7 +40,7 @@ func main() {
 		log.Fatalln("Failed to listen:", err)
 	}
 
-	jwtManager := middleware.NewJWTManager("secret", 24*time.Hour)
+	jwtManager := middleware.NewJWTManager("thongdeptraisieucapvutru", 24*time.Hour)
 	interceptor := middleware.NewAuthInterceptor(jwtManager, middleware.AccesibleRoles())
 
 	s := grpc.NewServer(

@@ -31,6 +31,7 @@ type SMServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Authenticate(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
+	CheckServerExists(ctx context.Context, in *CheckServerExistsRequest, opts ...grpc.CallOption) (*CheckServerExistsResponse, error)
 }
 
 type sMServiceClient struct {
@@ -158,6 +159,15 @@ func (c *sMServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ..
 	return out, nil
 }
 
+func (c *sMServiceClient) CheckServerExists(ctx context.Context, in *CheckServerExistsRequest, opts ...grpc.CallOption) (*CheckServerExistsResponse, error) {
+	out := new(CheckServerExistsResponse)
+	err := c.cc.Invoke(ctx, "/server_management.SMService/CheckServerExists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SMServiceServer is the server API for SMService service.
 // All implementations should embed UnimplementedSMServiceServer
 // for forward compatibility
@@ -175,6 +185,7 @@ type SMServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Authenticate(context.Context, *LoginRequest) (*AuthenticateResponse, error)
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
+	CheckServerExists(context.Context, *CheckServerExistsRequest) (*CheckServerExistsResponse, error)
 }
 
 // UnimplementedSMServiceServer should be embedded to have forward compatible implementations.
@@ -219,6 +230,9 @@ func (UnimplementedSMServiceServer) Authenticate(context.Context, *LoginRequest)
 }
 func (UnimplementedSMServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
+}
+func (UnimplementedSMServiceServer) CheckServerExists(context.Context, *CheckServerExistsRequest) (*CheckServerExistsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckServerExists not implemented")
 }
 
 // UnsafeSMServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -466,6 +480,24 @@ func _SMService_Logout_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SMService_CheckServerExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckServerExistsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SMServiceServer).CheckServerExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/server_management.SMService/CheckServerExists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SMServiceServer).CheckServerExists(ctx, req.(*CheckServerExistsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SMService_ServiceDesc is the grpc.ServiceDesc for SMService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -524,6 +556,10 @@ var SMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Logout",
 			Handler:    _SMService_Logout_Handler,
+		},
+		{
+			MethodName: "CheckServerExists",
+			Handler:    _SMService_CheckServerExists_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

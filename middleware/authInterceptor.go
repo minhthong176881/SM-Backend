@@ -38,8 +38,8 @@ func (interceptor *AuthInterceptor) Unary() grpc.UnaryServerInterceptor {
 func AccesibleRoles() map[string][]string {
 	const path = "/server_management.SMService/"
 	return map[string][]string{
-		path + "GetServers": {"admin"},
-		path + "GetServerById": {"admin"},
+		path + "GetServers": {"admin", "user"},
+		path + "GetServerById": {"admin", "user"},
 		path + "AddServer": {"admin"},
 		path + "UpdateServer": {"admin"},
 		path + "ExportServers": {"admin"},

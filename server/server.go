@@ -135,6 +135,12 @@ func (b *Backend) AddServer(ctx context.Context, req *pbSM.AddServerRequest) (*p
 	return server, nil
 }
 
+func (b *Backend) CheckServerExists(ctx context.Context, req *pbSM.CheckServerExistsRequest) (*pbSM.CheckServerExistsResponse, error) {
+	ip, port := req.GetIp(), req.GetPort()
+	result := b.baseService.CheckServerExists(ip, port)
+	return &pbSM.CheckServerExistsResponse{Exists: result}, nil
+}
+
 func (b *Backend) GetServerById(ctx context.Context, req *pbSM.GetServerByIdRequest) (*pbSM.Server, error) {
 	server, err := b.baseService.GetById(req.GetId())
 	if err != nil {

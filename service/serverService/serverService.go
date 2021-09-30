@@ -35,4 +35,5 @@ type ServerService interface {
 	Insert(server *Server) (*Server, error)
 	Update(id string, server *Server) (*Server, error)
 	Delete(id string) error
+	CheckServerExists(ip string, port int64) bool
 }

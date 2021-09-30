@@ -9,10 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"github.com/minhthong176881/Server_Management/utils"
-	serverService "github.com/minhthong176881/Server_Management/service/serverService"
 	elastic "github.com/olivere/elastic/v7"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -132,30 +130,13 @@ func (esServer *ElasticsearchServerService) Search(ctx context.Context, esClient
 }
 
 func (esServer *ElasticsearchServerService) GetLog(id string, start string, end string, date string, month string) ([]*LogItem, []*ChangeLogItem, error) {
-	redisClient := serverService.NewClient()
 	var elasticServer ElasticsearchServer
-	serverRedis, err := redisClient.Get(redisClient.Context(), id+"_log").Result()
-	if err != nil && err.Error() != string(redis.Nil) {
+
+	elastic, err := esServer.Search(context.Background(), esServer.ElasticClient, id)
+	if err != nil {
 		return nil, nil, err
 	}
-	if err == redis.Nil {
-		elastic, err := esServer.Search(context.Background(), esServer.ElasticClient, id)
-		if err != nil {
-			return nil, nil, err
-		}
-		redisVal, err := json.Marshal(elastic)
-		if err == nil {
-			redisClient.Set(redisClient.Context(), id+"_log", redisVal, 0)
-		}
-		elasticServer = elastic
-	} else if serverRedis != string(redis.Nil) {
-		err = json.Unmarshal([]byte(serverRedis), &elasticServer)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		return nil, nil, err
-	}
+	elasticServer = elastic
 
 	logs := strings.Split(elasticServer.Log, "\n")
 	var startIndex int
@@ -291,4 +272,3 @@ func initIndex(ctx context.Context, esClient *elastic.Client, index string) erro
 		return nil
 	}
 }
-
