@@ -53,6 +53,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	time.Sleep(30 * time.Second)
+
 	mongoServerService := serverService.NewMongoServerService()
 	redisServerService := serverService.NewRedisServerService(mongoServerService)
 	user := userService.NewUser(mongoServerService)
@@ -60,7 +62,6 @@ func main() {
 	serverLog := serverLogService.NewServerLog(elasticsearchServerService)
 	serverStatusUpdateWorker := worker.NewServerStatusUpdateWorker(redisServerService, serverLog)
 	serverStatus := serverStatusService.NewServerStatus(serverStatusUpdateWorker)
-	// time.Sleep(30 * time.Second)
 
 	pbSM.RegisterSMServiceServer(s, server.New(redisServerService, serverLog, serverStatus, user, jwtManager))
 

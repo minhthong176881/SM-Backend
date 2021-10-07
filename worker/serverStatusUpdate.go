@@ -135,7 +135,7 @@ func (w *ServerStatusUpdateWorker) UpdateLog() error {
 }
 
 func (w *ServerStatusUpdateWorker) ExecuteCronJob() {
-	ticker := time.NewTicker(600 * time.Second)
+	ticker := time.NewTicker(300 * time.Second)
 	for range ticker.C {
 		w.UpdateLog()
 	}
