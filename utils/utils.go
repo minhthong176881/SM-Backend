@@ -44,6 +44,22 @@ func Connect(addr, user, password string) (*Connection, error) {
 	return &Connection{conn, password}, nil
 }
 
+func RemoteExecCommand(addr, user, password string) (string, error) {
+	conn, err := Connect(addr, user, password)
+	if err != nil {
+		return "", err;
+	}
+	session, err := conn.NewSession()
+	if err != nil {
+		return "", err;
+	}
+	defer session.Close()
+	var b bytes.Buffer
+	session.Stdout = &b
+	err = session.Run("ls")
+	return b.String(), error
+}
+
 func SendEmail(message []string) {
 	err := godotenv.Load(".env")
 	if err != nil {
