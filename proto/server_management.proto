@@ -123,6 +123,15 @@ message ValidateServerResponse {
   bool validated = 1;
 }
 
+message RemoteCommandRequest {
+  string id = 1;
+  string command = 2;
+}
+
+message RemoteCommandResponse {
+  string output = 1;
+}
+
 message RegisterRequest {
   User user = 1;
 }
@@ -257,6 +266,18 @@ service SMService {
             tags: "Servers"
           };
     }; 
+
+    rpc RemoteCommand (RemoteCommandRequest) returns (RemoteCommandResponse) {
+      option (google.api.http) = {
+          post: "/api/v1/servers/{id}/exec",
+          body: "*"
+      };
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+          summary: "Execute ssh remote command"
+          description: "Execute ssh remote command."
+          tags: "Servers"
+        };
+  }; 
 
     rpc Register (RegisterRequest) returns (User) {
       option (google.api.http) = {

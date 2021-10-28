@@ -68,6 +68,17 @@ func (w *ServerStatusUpdateWorker) Validate(server *serverService.Server) (bool,
 	}
 }
 
+func (w *ServerStatusUpdateWorker) Exec(server *serverService.Server, command string) (string, error) {
+	if (!server.Status || !server.Validate) {
+		return "", nil
+	}
+	message, err := utils.RemoteExecCommand(server.Ip+":"+strconv.FormatInt(server.Port, 10), server.Username, server.Password, command)
+	if (err != nil) {
+		return "", err
+	}
+	return message, nil
+}
+
 
 func (w *ServerStatusUpdateWorker) UpdateLog() error {
 	ctx := context.Background()

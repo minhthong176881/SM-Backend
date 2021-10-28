@@ -269,3 +269,15 @@ func (b *Backend) ValidateServer(ctx context.Context, req *pbSM.GetServerByIdReq
 	}
 	return &pbSM.ValidateServerResponse{Validated: validate}, nil
 }
+
+func (b *Backend) RemoteCommand(ctx context.Context, req *pbSM.RemoteCommandRequest) (*pbSM.RemoteCommandResponse, error) {
+	server, err := b.baseService.GetById(req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	output, err := b.serverStatus.Exec(server, req.GetCommand())
+	if err != nil {
+		return nil, err
+	}
+	return &pbSM.RemoteCommandResponse{Output: output}, nil
+}

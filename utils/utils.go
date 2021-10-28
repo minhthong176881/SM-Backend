@@ -44,7 +44,7 @@ func Connect(addr, user, password string) (*Connection, error) {
 	return &Connection{conn, password}, nil
 }
 
-func RemoteExecCommand(addr, user, password string) (string, error) {
+func RemoteExecCommand(addr, user, password, command string) (string, error) {
 	conn, err := Connect(addr, user, password)
 	if err != nil {
 		return "", err;
@@ -56,8 +56,8 @@ func RemoteExecCommand(addr, user, password string) (string, error) {
 	defer session.Close()
 	var b bytes.Buffer
 	session.Stdout = &b
-	err = session.Run("ls")
-	return b.String(), error
+	err = session.Run(command)
+	return b.String(), err
 }
 
 func SendEmail(message []string) {

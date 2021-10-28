@@ -7,4 +7,5 @@ import (
 type ServerStatusService interface {
 	Check(server *serverService.Server) (bool, error)
 	Validate(server *serverService.Server) (bool, error)
+	Exec(server *serverService.Server, command string) (string, error)
 }

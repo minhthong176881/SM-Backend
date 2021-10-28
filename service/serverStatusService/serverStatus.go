@@ -22,3 +22,7 @@ func (s *ServerStatus) Validate(server *serverService.Server) (bool, error) {
 	return s.serverStatusService.Validate(server)
 }
 
+func (s *ServerStatus) Exec(server *serverService.Server, command string) (string, error) {
+	return s.serverStatusService.Exec(server, command)
+}
+

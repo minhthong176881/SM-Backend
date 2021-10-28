@@ -297,6 +297,51 @@
         ]
       }
     },
+    "/api/v1/servers/{id}/exec": {
+      "post": {
+        "summary": "Execute ssh remote command",
+        "description": "Execute ssh remote command.",
+        "operationId": "SMService_RemoteCommand",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/server_managementRemoteCommandResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Servers"
+        ]
+      }
+    },
     "/api/v1/servers/{id}/log": {
       "get": {
         "summary": "Get specific server log",
@@ -672,6 +717,14 @@
       "properties": {
         "user": {
           "$ref": "#/definitions/server_managementUser"
+        }
+      }
+    },
+    "server_managementRemoteCommandResponse": {
+      "type": "object",
+      "properties": {
+        "output": {
+          "type": "string"
         }
       }
     },

@@ -27,6 +27,7 @@ type SMServiceClient interface {
 	CheckServer(ctx context.Context, in *GetServerByIdRequest, opts ...grpc.CallOption) (*CheckServerResponse, error)
 	GetServerLog(ctx context.Context, in *GetServerLogRequest, opts ...grpc.CallOption) (*GetServerLogResponse, error)
 	ValidateServer(ctx context.Context, in *GetServerByIdRequest, opts ...grpc.CallOption) (*ValidateServerResponse, error)
+	RemoteCommand(ctx context.Context, in *RemoteCommandRequest, opts ...grpc.CallOption) (*RemoteCommandResponse, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*User, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	Authenticate(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
@@ -123,6 +124,15 @@ func (c *sMServiceClient) ValidateServer(ctx context.Context, in *GetServerByIdR
 	return out, nil
 }
 
+func (c *sMServiceClient) RemoteCommand(ctx context.Context, in *RemoteCommandRequest, opts ...grpc.CallOption) (*RemoteCommandResponse, error) {
+	out := new(RemoteCommandResponse)
+	err := c.cc.Invoke(ctx, "/server_management.SMService/RemoteCommand", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *sMServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
 	err := c.cc.Invoke(ctx, "/server_management.SMService/Register", in, out, opts...)
@@ -181,6 +191,7 @@ type SMServiceServer interface {
 	CheckServer(context.Context, *GetServerByIdRequest) (*CheckServerResponse, error)
 	GetServerLog(context.Context, *GetServerLogRequest) (*GetServerLogResponse, error)
 	ValidateServer(context.Context, *GetServerByIdRequest) (*ValidateServerResponse, error)
+	RemoteCommand(context.Context, *RemoteCommandRequest) (*RemoteCommandResponse, error)
 	Register(context.Context, *RegisterRequest) (*User, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Authenticate(context.Context, *LoginRequest) (*AuthenticateResponse, error)
@@ -218,6 +229,9 @@ func (UnimplementedSMServiceServer) GetServerLog(context.Context, *GetServerLogR
 }
 func (UnimplementedSMServiceServer) ValidateServer(context.Context, *GetServerByIdRequest) (*ValidateServerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateServer not implemented")
+}
+func (UnimplementedSMServiceServer) RemoteCommand(context.Context, *RemoteCommandRequest) (*RemoteCommandResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoteCommand not implemented")
 }
 func (UnimplementedSMServiceServer) Register(context.Context, *RegisterRequest) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
@@ -408,6 +422,24 @@ func _SMService_ValidateServer_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SMService_RemoteCommand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoteCommandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SMServiceServer).RemoteCommand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/server_management.SMService/RemoteCommand",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SMServiceServer).RemoteCommand(ctx, req.(*RemoteCommandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SMService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterRequest)
 	if err := dec(in); err != nil {
@@ -540,6 +572,10 @@ var SMService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ValidateServer",
 			Handler:    _SMService_ValidateServer_Handler,
+		},
+		{
+			MethodName: "RemoteCommand",
+			Handler:    _SMService_RemoteCommand_Handler,
 		},
 		{
 			MethodName: "Register",
